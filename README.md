@@ -7,9 +7,13 @@ Sekcja instalacji lokalnej
 Upewnij się, że na komputerze zainstalowana jest wersja LTS Node.js.
    [W razie potrzeby pobierz ją i zainstaluj](https://nodejs.org/en/).
 
-## Ścignąć repozytorium z githup
+## Ścignąć repozytorium z github
 
-git clone {repo}
+`git clone https://github.com/LucasTerg/webp-jpeg-www.git`
+
+`git clone git@github.com:LucasTerg/webp-jpeg-www.git`
+
+[Download ZIP](https://github.com/LucasTerg/webp-jpeg-www/archive/refs/heads/main.zip)
 
 ## Wydać polecenia
 
