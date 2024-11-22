@@ -15,7 +15,8 @@ document
     );
 
     try {
-      const response = await fetch('/upload', {
+      const response = await fetch('http://localhost:3000/upload', {
+        // Zmiana URL na właściwy backend
         method: 'POST',
         body: formData,
       });
