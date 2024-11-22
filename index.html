@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vanilla App Template</title>
     <script type="module" crossorigin src="/webp-jpeg-www/index.js"></script>
-    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/styles-DvPDDfy5.css">
+    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/styles-DLEgkSGP.css">
   </head>
   <body>
     <header class="header">
@@ -14,7 +14,7 @@
     <nav class="nav">
       <a class="nav-logo" href="./index.html" aria-label="Site logo">
         <svg class="nav-logo-icon" width="100" height="30">
-          <use href="/webp-jpeg-www/assets/sprite-E8vg0sBb.svg#logo"></use>
+          <use href="/webp-jpeg-www/assets/sprite-E8vg0sBb.svg#logo2"></use>
         </svg>
       </a>
       <ul class="nav-list">
@@ -32,43 +32,22 @@
 
     <main>
       <!-- Loads the specified .html file -->
-      <section class="vite-promo">
-  <div class="container">
-    <div class="vite-promo-thumb">
-      <a
-        class="vite-promo-link"
-        href="https://vitejs.dev/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Link to Vite official website"
-        title="Vite.js  build tool"
-      >
-        <!-- Path to images as from index.html file -->
-        <img
-          class="pic"
-          src="/webp-jpeg-www/assets/vite-logo-9o_aqrTe.png"
-          alt="Vite logo"
-          width="640"
-          height="640"
-        />
-      </a>
+      <section class="photo-cropper">
+    <div class="container">
+        <h1 class="main-title">Photo Cropper</h1>
+        <form id="upload-form">
+            <label for="file-input" class="file-label">
+                Wybierz zdjęcia (.webp)
+                <input type="file" id="file-input" multiple accept=".webp">
+            </label>
+            <button type="submit" class="submit-btn">Prześlij i przetwórz</button>
+        </form>
+        <div id="result">
+            <a id="download-link" class="download-btn" style="display: none;">Pobierz spakowane zdjęcia</a>
+        </div>
     </div>
-    <h1 class="main-title">
-      <span class="main-title-gradient">Vite</span>
-      Template by
-      <a
-        class="main-title-link"
-        href="https://github.com/goitacademy/vanilla-app-template"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        GoIT
-      </a>
-    </h1>
-  </div>
 </section>
-
-      <article class="badges">
+      <!-- <article class="badges">
   <div class="container">
     <ul class="badges-list">
       <li class="badges-item">
@@ -104,7 +83,7 @@
     </ul>
   </div>
 </article>
-
+ -->
     </main>
 
     <footer class="footer">
@@ -117,11 +96,12 @@
         target="_blank"
         rel="noopener noreferrer"
       >
-        GoIT team
+        LMK One
       </a>
     </p>
   </div>
 </footer>
+
 
 
   </body>
