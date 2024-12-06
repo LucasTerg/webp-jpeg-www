@@ -59,6 +59,6 @@ Zobacz czy server jest włączony [http://localhost:3000](http://localhost:3000)
 
 Aby dowiedzieć się, jak zainstalować i skonfigurować to repozytorium na systemie Windows, obejrzyj poniższy film na YouTube:
 
-[![Jak zainstalować i skonfigurować repozytorium LucasTerg/webp-jpeg-www na Windowsie](https://pl.wikipedia.org/wiki/Windows_10#/media/Plik:Windows10abstract.png)](https://youtu.be/UIN0J5sMODM)
+[![Jak zainstalować i skonfigurować repozytorium LucasTerg/webp-jpeg-www na Windowsie](https://blogs.windows.com/wp-content/uploads/mswbprod/sites/2/2018/12/43b0418862957fff963e2b2bb97306f3.png)](https://youtu.be/UIN0J5sMODM)
 
 W filmie znajdziesz szczegółowe kroki instalacji oraz uruchomienia projektu lokalnie. 🎥
