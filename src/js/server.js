@@ -12,6 +12,53 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express(); // Inicjalizacja aplikacji Express
+
+// Funkcja do zamiany polskich znaków na odpowiedniki bez ogonków
+const replacePolishChars = (str) => {
+  return str
+    .replace(/ą/g, 'a')
+    .replace(/ć/g, 'c')
+    .replace(/ę/g, 'e')
+    .replace(/ł/g, 'l')
+    .replace(/ń/g, 'n')
+    .replace(/ó/g, 'o')
+    .replace(/ś/g, 's')
+    .replace(/ź/g, 'z')
+    .replace(/ż/g, 'z')
+    .replace(/Ą/g, 'A')
+    .replace(/Ć/g, 'C')
+    .replace(/Ę/g, 'E')
+    .replace(/Ł/g, 'L')
+    .replace(/Ń/g, 'N')
+    .replace(/Ó/g, 'O')
+    .replace(/Ś/g, 'S')
+    .replace(/Ź/g, 'Z')
+    .replace(/Ż/g, 'Z')
+    .replace(/\(/g, '')  // remove left parenthesis
+    .replace(/\)/g, ''); // remove right parenthesis
+};
+
+// Funkcja do zamiany spacji na "-"
+const replaceSpaces = (str) => str.replace(/\s+/g, '-');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const newName = req.body.newName || 'default';
+    const sanitizedName = replaceSpaces(replacePolishChars(newName));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      `${sanitizedName}-${uniqueSuffix}${path.extname(file.originalname)}`
+    );
+  },
+});
 const upload = multer({
   dest: path.join(__dirname, 'uploads'),
   fileFilter: (req, file, cb) => {

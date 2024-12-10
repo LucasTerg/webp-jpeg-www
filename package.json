@@ -15,8 +15,8 @@
     "postcss-sort-media-queries": "^5.2.0",
     "vite": "^5.4.6"
   },
-  "author": "Alexander Repeta <alexander.repeta@gmail.com>",
-  "license": "ISC",
+  "author": "Łukasz Kalinowski <lukasz.kalinowski.terg@gmail.com>",
+  "license": "LGPL-3.0-or-later",
   "dependencies": {
     "archiver": "^7.0.1",
     "cors": "^2.8.5",

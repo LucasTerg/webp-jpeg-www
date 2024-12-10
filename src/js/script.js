@@ -1,9 +1,9 @@
-document
-  .getElementById('upload-form')
+document.getElementById('upload-form')
   .addEventListener('submit', async event => {
     event.preventDefault();
 
     const fileInput = document.getElementById('file-input');
+    const fileNameInput = document.getElementById('file-name');
     if (!fileInput.files.length) {
       alert('Proszę wybrać zdjęcia!');
       return;
@@ -13,6 +13,9 @@ document
     Array.from(fileInput.files).forEach(file =>
       formData.append('images', file)
     );
+
+    // Dodaj nazwę pliku do formData
+    formData.append('newName', fileNameInput.value);
 
     try {
       const response = await fetch('http://localhost:3000/upload', {
