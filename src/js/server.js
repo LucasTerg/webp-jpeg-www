@@ -4,6 +4,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import archiver from 'archiver';
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,7 +15,7 @@ const __dirname = path.dirname(__filename);
 const app = express(); // Inicjalizacja aplikacji Express
 
 // Funkcja do zamiany polskich znaków na odpowiedniki bez ogonków
-const replacePolishChars = (str) => {
+const replacePolishChars = str => {
   return str
     .replace(/ą/g, 'a')
     .replace(/ć/g, 'c')
@@ -34,12 +35,12 @@ const replacePolishChars = (str) => {
     .replace(/Ś/g, 'S')
     .replace(/Ź/g, 'Z')
     .replace(/Ż/g, 'Z')
-    .replace(/\(/g, '')  // remove left parenthesis
+    .replace(/\(/g, '') // remove left parenthesis
     .replace(/\)/g, ''); // remove right parenthesis
 };
 
 // Funkcja do zamiany spacji na "-"
-const replaceSpaces = (str) => str.replace(/\s+/g, '-');
+const replaceSpaces = str => str.replace(/\s+/g, '-');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -110,12 +111,11 @@ app.post(
   async (req, res) => {
     const outputDir = path.join(__dirname, 'output');
     const zipPath = path.join(__dirname, 'cropped_images.zip');
+    const newName = req.body.newName || 'image'; //Uzyj nowej nazwy
 
     try {
       // Utwórz folder wyjściowy, jeśli nie istnieje
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir);
-      }
+      await fsPromises.mkdir(outputDir, { recursive: true });
 
       // Sprawdzenie, czy pliki zostały przesłane
       if (!req.files || req.files.length === 0) {
@@ -123,27 +123,27 @@ app.post(
       }
 
       // Przetwarzanie każdego przesłanego pliku
-      for (const file of req.files) {
+      const processingPromises = req.files.map((file, index) => {
         const inputPath = file.path;
-        const outputPath = path.join(
-          outputDir,
-          `${path.parse(file.originalname).name}.jpg`
-        );
+        const outputPath = path.join(outputDir, `${newName}-${index + 1}.jpg`);
 
-        try {
-          console.log(`Przetwarzanie pliku: ${inputPath}`);
-          await sharp(inputPath)
-            .trim()
-            .flatten({ background: '#ffffff' }) // Ustaw białe tło
-            .jpeg({ quality: 98, progressive: true })
-            .toFile(outputPath);
-
-          console.log(`Zapisano plik: ${outputPath}`);
-          fs.unlinkSync(inputPath); // Usuń plik tymczasowy
-        } catch (err) {
-          console.error(`Błąd przetwarzania pliku ${file.originalname}:`, err);
-        }
-      }
+        return sharp(inputPath)
+          .trim() // Kadrowanie
+          .flatten({ background: '#ffffff' }) // Ustaw białe tło
+          .jpeg({ quality: 98, progressive: true })
+          .toFile(outputPath)
+          .then(() => {
+            console.log(`Zapisano plik: ${outputPath}`);
+            return fsPromises.unlink(inputPath); // Usuń plik tymczasowy
+          })
+          .catch(err => {
+            console.error(
+              `Błąd przetwarzania pliku ${file.originalname}:`,
+              err
+            );
+          });
+      });
+      await Promise.all(processingPromises);
 
       // Tworzenie pliku ZIP
       const archive = archiver('zip', { zlib: { level: 9 } });
