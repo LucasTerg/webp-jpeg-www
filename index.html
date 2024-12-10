@@ -37,9 +37,10 @@
         <h1 class="main-title">Photo Cropper</h1>
         <form id="upload-form">
             <label for="file-input" class="file-label">
-                Wybierz zdjęcia (.webp)
+                Wybierz zdjęcia
                 <input type="file" id="file-input" multiple accept=".jpeg,.png,.webp,.gif,.tiff,.jpg">
             </label>
+                <input type="text" id="file-name" placeholder="Kliknij, aby wkleić nazwę ze schowka">
             <button type="submit" class="submit-btn">Prześlij i przetwórz</button>
         </form>
         <div id="result">
@@ -47,6 +48,37 @@
         </div>
     </div>
 </section>
+
+<script>
+    document.getElementById('file-name').addEventListener('click', async function () {
+        try {
+            const text = await navigator.clipboard.readText();
+            this.value = sanitizeFileName(text);
+        } catch (err) {
+            console.error('Failed to read clipboard contents: ', err);
+        }
+    });
+
+    function sanitizeFileName(fileName) {
+        // Usuń polskie znaki
+        const polishChars = {
+            'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+            'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+        };
+        fileName = fileName.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, char => polishChars[char] || char);
+
+        // Usuń nawiasy
+        fileName = fileName.replace(/[\(\)]/g, '');
+
+        // Zamień spacje na myślniki
+        fileName = fileName.replace(/\s+/g, '-');
+
+        // Usuń wszystkie znaki specjalne oprócz myślników
+        fileName = fileName.replace(/[^a-zA-Z0-9-]/g, '');
+
+        return fileName;
+    }
+</script>
       <!-- <article class="badges">
   <div class="container">
     <ul class="badges-list">
