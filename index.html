@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Webp > jpeg >> GUI</title>
     <script type="module" crossorigin src="/webp-jpeg-www/index.js"></script>
-    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/styles-CzKo3QMG.css">
+    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/styles-CfwAGYY-.css">
   </head>
   <body>
     <header class="header">
@@ -40,9 +40,13 @@
                 Wybierz zdjęcia
                 <input type="file" id="file-input" multiple accept=".jpeg,.png,.webp,.gif,.tiff,.jpg">
             </label>
-                <input type="text" id="file-name" placeholder="Skopiuj nazwę z => PIMu">
+            <input type="text" id="file-name" placeholder="Skopiuj nazwę z => PIMu">
             <button type="submit" class="submit-btn">Prześlij i przetwórz</button>
         </form>
+        <div id="progress-container" style="display: none;">
+            <div id="progress-bar"></div>
+            <div id="progress-text"></div>
+        </div>
         <div id="result">
             <a id="download-link" class="download-btn" style="display: none;">Pobierz spakowane zdjęcia</a>
         </div>
