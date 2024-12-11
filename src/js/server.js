@@ -130,7 +130,7 @@ app.post(
         return sharp(inputPath)
           .trim() // Kadrowanie
           .flatten({ background: '#ffffff' }) // Ustaw białe tło
-          .jpeg({ quality: 98, progressive: true })
+          .jpeg({ quality: 99, progressive: true, optimiseScans: true }) //})
           .toFile(outputPath)
           .then(() => {
             console.log(`Zapisano plik: ${outputPath}`);
