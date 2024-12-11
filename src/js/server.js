@@ -122,16 +122,62 @@ app.post(
         return res.status(400).json({ error: 'Nie przesłano żadnych plików.' });
       }
 
-      // Przetwarzanie każdego przesłanego pliku
+      // Przetwarzanie każdego przesłanego pliku -------------------
+
+      // const processingPromises = req.files.map((file, index) => {
+      //   const inputPath = file.path;
+      //   const outputPath = path.join(outputDir, `${newName}-${index + 1}.jpg`);
+
+      //   return sharp(inputPath)
+      //     .trim() // Kadrowanie
+      //     .flatten({ background: '#ffffff' }) // Ustaw białe tło
+      //     .jpeg({ quality: 99, progressive: true, optimiseScans: true }) //})
+      //     .toFile(outputPath)
+      //     .then(() => {
+      //       console.log(`Zapisano plik: ${outputPath}`);
+      //       return fsPromises.unlink(inputPath); // Usuń plik tymczasowy
+      //     })
+      //     .catch(err => {
+      //       console.error(
+      //         `Błąd przetwarzania pliku ${file.originalname}:`,
+      //         err
+      //       );
+      //     });
+      // });
+
+
+
       const processingPromises = req.files.map((file, index) => {
         const inputPath = file.path;
         const outputPath = path.join(outputDir, `${newName}-${index + 1}.jpg`);
 
         return sharp(inputPath)
-          .trim() // Kadrowanie
-          .flatten({ background: '#ffffff' }) // Ustaw białe tło
-          .jpeg({ quality: 99, progressive: true, optimiseScans: true }) //})
-          .toFile(outputPath)
+          .metadata()
+          .then(metadata => {
+            let image = sharp(inputPath);
+            let { width, height } = metadata;
+
+            // Najpierw kadrujemy (usuwamy białe tło)
+            image = image.trim();
+
+            // Następnie sprawdzamy rozmiary i ewentualnie skalujemy
+            if (width > 3000 || height > 3600) {
+              if (height > 3600) {
+                height = 3600;
+                width = Math.round((3600 / metadata.height) * metadata.width);
+              }
+              if (width > 3000) {
+                width = 3000;
+                height = Math.round((3000 / metadata.width) * metadata.height);
+              }
+              image = image.resize(width, height, { fit: 'inside' });
+            }
+
+            return image
+              .flatten({ background: '#ffffff' }) // Ustaw białe tło
+              .jpeg({ quality: 99, progressive: true, optimiseScans: true })
+              .toFile(outputPath);
+          })
           .then(() => {
             console.log(`Zapisano plik: ${outputPath}`);
             return fsPromises.unlink(inputPath); // Usuń plik tymczasowy
@@ -143,6 +189,8 @@ app.post(
             );
           });
       });
+// ----------------------------------------------------------------
+
       await Promise.all(processingPromises);
 
       // Tworzenie pliku ZIP

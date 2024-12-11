@@ -1,16 +1,21 @@
-# 🌟 Webp-Jpeg-WWW
+# 🌟 PIM-Jpeg-WWW
 
 ## ✨ Opis programu
 
-**WEBP-JPEG-WWW** to szybkie i proste narzędzie do przetwarzania plików graficznych. Dzięki niemu możesz łatwo dostosować swoje obrazy do swoich potrzeb! 🚀  
+**PIM-JPEG-WWW** to szybkie i proste narzędzie do przetwarzania plików graficznych. Dzięki niemu możesz łatwo dostosować swoje obrazy do swoich potrzeb! 🚀  
 
 ### Główne funkcje:
-- ✂️ **Kadrowanie obrazów** – automatycznie przycina i dopasowuje wymiary obrazów. Usuwa nadmiar białego tła oprócz plików .tiff.
+- ✂️ **Kadrowanie obrazów** – automatycznie przycina i dopasowuje wymiary obrazów. Usuwa nadmiar białego tła oprócz plików .tiff, gif (experimental) .
 - 🖼️ **Dodawanie białego tła** – wszystkie obrazy otrzymują jednolite, czyste białe tło. Usuwa kanał alpha.
-- 🔄 **Konwersja na JPG** – zmiana formatu na bardziej kompatybilny z różnymi platformami i narzędziami. Teraz obługuje .jpeg, .png, .webp, .gif, .tiff, .jpg.  
+- 🔄 **Konwersja na JPG** – zmiana formatu na bardziej kompatybilny z różnymi platformami i narzędziami. Teraz obługuje .jpeg, .png, .webp, (.gif, .tiff), .jpg.  
 
 Program został zaprojektowany z myślą o prostocie i szybkości działania. To idealne rozwiązanie do przetwarzania dużych zestawów obrazów! 🎨✨  
 
+### Wynik działania programu to pliki jpg z nazwą umieszczoną w inpucie 
+(wszystkie polskie znaki są zamieniane na znaki bez ogonków, spacje na znak "-"). Pliki większe od height: `3600px` są zmniejszane do tego rozmiaru i width: `3000px` jak poprzednio są zmniejszane.
+
+### Wprowdzaj pliki w formie:
+`1.jpg, 2.jpeg, 3.webp` itd a otrzymasz `nazwa-1.jpg, nazwa-2.jpg` itd.
 ---
 
 ## 📦 Instalacja lokalna
