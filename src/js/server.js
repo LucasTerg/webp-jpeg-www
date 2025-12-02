@@ -317,6 +317,153 @@ app.post(
   }
 );
 
+// Endpoint dla narzędzi (Tools)
+app.post(
+  '/upload-tools',
+  (req, res, next) => {
+    upload.array('images')(req, res, err => {
+      if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    const outputDir = path.join(__dirname, 'output-tools');
+    const zipPath = path.join(__dirname, 'processed_tools.zip');
+    const newName = req.body.newName || 'image';
+    
+    // Parsowanie opcji (FormData przesyła jako stringi 'true'/'false')
+    const startNumber = parseInt(req.body.startNumber) || 1;
+    const optCrop = req.body.optCrop === 'true';
+    const optResize = req.body.optResize === 'true'; // Dopełnienie do 500px
+
+    try {
+      await fsPromises.mkdir(outputDir, { recursive: true });
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'Nie przesłano żadnych plików.' });
+      }
+
+      const processingPromises = req.files.map(async (file, index) => {
+        const inputPath = file.path;
+        // Logika numeracji: startNumber + index (może być ujemna)
+        const currentNum = startNumber + index;
+        const outputPath = path.join(outputDir, `${newName}-${currentNum}.jpg`);
+
+        try {
+          let image = sharp(inputPath);
+          const metadata = await image.metadata();
+          let { width, height } = metadata;
+
+          // --- LOGIKA KADROWANIA I MARGINESU (jeśli zaznaczona) ---
+          if (optCrop) {
+             // 1. Sprawdź 4 rogi
+            const corners = [
+              { left: 0, top: 0 },
+              { left: width - 1, top: 0 },
+              { left: 0, top: height - 1 },
+              { left: width - 1, top: height - 1 },
+            ];
+
+            let hasBackgroundContext = false;
+            for (const corner of corners) {
+              const pixelBuffer = await image
+                .clone()
+                .extract({ left: corner.left, top: corner.top, width: 1, height: 1 })
+                .toBuffer();
+              const a = pixelBuffer.length >= 4 ? pixelBuffer[3] : 255;
+              const isWhite = pixelBuffer[0] > 230 && pixelBuffer[1] > 230 && pixelBuffer[2] > 230;
+              if (isWhite || a < 255) {
+                hasBackgroundContext = true;
+                break;
+              }
+            }
+
+            // 2. Trim
+            const trimmedData = await image
+              .clone()
+              .trim()
+              .toBuffer({ resolveWithObject: true });
+            
+            image = sharp(trimmedData.data);
+            let currentWidth = trimmedData.info.width;
+            let currentHeight = trimmedData.info.height;
+            const wasTrimmed = currentWidth < width || currentHeight < height;
+
+            // 3. Margines
+            if (hasBackgroundContext || wasTrimmed) {
+              image = image.extend({
+                top: 5, bottom: 5, left: 5, right: 5,
+                background: '#ffffff'
+              });
+              // Aktualizacja zmiennych pomocniczych nie jest konieczna bo image chain leci dalej
+            }
+          }
+
+          // Pobieramy zaktualizowane metadane po ew. kadrowaniu, aby resize działał poprawnie
+          const bufferAfterCrop = await image.toBuffer({ resolveWithObject: true });
+          image = sharp(bufferAfterCrop.data);
+          width = bufferAfterCrop.info.width;
+          height = bufferAfterCrop.info.height;
+
+          // --- LOGIKA RESIZE (Dopełnienie do 500px) ---
+          if (optResize) {
+             const targetWidth = Math.max(width, 500);
+             const targetHeight = Math.max(height, 500);
+             
+             if (width < targetWidth || height < targetHeight) {
+               image = image.resize({
+                 width: targetWidth,
+                 height: targetHeight,
+                 fit: 'contain',
+                 background: '#ffffff'
+               });
+             }
+          }
+
+          // Zapis
+          await image
+            .flatten({ background: '#ffffff' })
+            .jpeg({ quality: 99, progressive: true, optimiseScans: true })
+            .toFile(outputPath);
+
+          await fsPromises.unlink(inputPath);
+        } catch (err) {
+          console.error(`Błąd (Tools) ${file.originalname}:`, err);
+          try { if (fs.existsSync(inputPath)) await fsPromises.unlink(inputPath); } catch(e){}
+        }
+      });
+
+      await Promise.all(processingPromises);
+
+      // ZIPowanie (wspólna logika)
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      const output = fs.createWriteStream(zipPath);
+
+      output.on('close', () => console.log('ZIP gotowy (Tools).'));
+      archive.pipe(output);
+      archive.directory(outputDir, false);
+      await archive.finalize();
+
+      res.setHeader('Content-Disposition', 'attachment; filename="processed.zip"');
+      res.setHeader('Content-Type', 'application/zip');
+      
+      const zipStream = fs.createReadStream(zipPath);
+      zipStream.pipe(res);
+
+      zipStream.on('end', () => {
+        fs.rmSync(outputDir, { recursive: true, force: true });
+        fs.unlinkSync(zipPath);
+      });
+
+    } catch (error) {
+      console.error('Błąd (Tools):', error);
+      res.status(500).json({ error: 'Błąd przetwarzania.' });
+    }
+  }
+);
+
 // Obsługa błędnych tras
 app.use((req, res) => {
   res.status(404).json({ error: 'Nie znaleziono żądanej ścieżki.' });

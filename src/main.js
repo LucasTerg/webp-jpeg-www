@@ -32,4 +32,20 @@ async function loadPartials() {
 }
 
 // Wywołaj funkcję po załadowaniu DOM
-document.addEventListener('DOMContentLoaded', loadPartials);
+document.addEventListener('DOMContentLoaded', () => {
+  loadPartials();
+
+  // --- OBSŁUGA MOTYWU ---
+  const savedTheme = localStorage.getItem('theme') || 'light'; // Główna strona domyślnie light
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  // Obsługa przycisku (delegacja, bo przycisk może być w partialu ładowanym dynamicznie lub statycznie)
+  document.body.addEventListener('click', (e) => {
+    if (e.target.closest('#theme-toggle-main')) {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    }
+  });
+});

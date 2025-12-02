@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TERG Tools // Hacker Edition</title>
+    <link rel="stylesheet" href="./css/reset.css" />
+    <link rel="stylesheet" href="./css/tools.css" />
+  </head>
+  <body>
+    <div class="hacker-container">
+      <header>
+        <h1><span>SYSTEM</span> NARZĘDZIOWY PIM</h1>
+        <div>
+          <a href="index.html" class="btn btn-sm">Wróć</a>
+          <button id="theme-toggle" class="btn btn-sm">L/D MODE</button>
+        </div>
+      </header>
+
+      <!-- Sekcja Lewa: Lista plików -->
+      <section class="panel">
+        <div class="panel-header">
+          <span>STREFA ZRZUTU PLIKÓW</span>
+          <button id="clear-list" class="btn btn-sm">WYCZYŚĆ</button>
+        </div>
+        
+        <div id="file-dropzone">
+          <p>PRZECIĄGNIJ PLIKI TUTAJ LUB KLIKNIJ</p>
+          <input type="file" id="file-input" multiple style="display: none;" />
+        </div>
+
+        <ul id="file-list">
+          <!-- Elementy listy generowane przez JS -->
+        </ul>
+      </section>
+
+      <!-- Sekcja Prawa: Ustawienia -->
+      <section class="panel">
+        <div class="panel-header">KONFIGURACJA OPERACJI</div>
+
+        <div class="control-group">
+          <label for="base-name">BAZA NAZWY PLIKU:</label>
+          <input type="text" id="base-name" placeholder="Np. Produkt-X" />
+        </div>
+
+        <div class="control-group">
+          <label for="start-number">NUMER STARTOWY:</label>
+          <input type="number" id="start-number" value="1" />
+          <small style="opacity: 0.7">Możesz wpisać liczby ujemne (np. -2).</small>
+        </div>
+
+        <div class="control-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="opt-crop" checked />
+            [KADROWANIE + MARGINES 5PX]
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="opt-resize" />
+            [DOPEŁNIJ DO 500PX]
+          </label>
+        </div>
+
+        <button id="execute-btn" class="btn">WYKONAJ PROCEDURĘ</button>
+      </section>
+
+      <div class="status-log" id="console-log">
+        <p>> System gotowy...</p>
+      </div>
+    </div>
+
+    <load src="./partials/nav-fab.html" />
+    <script type="module" src="./js/tools.js"></script>
+  </body>
+</html>

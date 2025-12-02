@@ -1,69 +1,65 @@
-# 🌟 PIM-Jpeg-WWW
+# Webp/JPEG/AVIF Image Processor
 
-## ✨ Opis programu
+Wszechstronne narzędzie do przetwarzania obrazów, stworzone z myślą o szybkich konwersjach i przygotowywaniu plików zgodnie z konkretnymi standardami (Media Expert). Pozwala na szybką zmianę formatów, inteligentne kadrowanie oraz precyzyjne zarządzanie nazewnictwem plików.
 
-**PIM-JPEG-WWW** to szybkie i proste narzędzie do przetwarzania plików graficznych. Dzięki niemu możesz łatwo dostosować swoje obrazy do swoich potrzeb! 🚀  
+## ✨ Główne Funkcje
 
-### Główne funkcje:
-- ✂️ **Kadrowanie obrazów** – automatycznie przycina i dopasowuje wymiary obrazów. Usuwa nadmiar białego tła oprócz plików .tiff, gif (experimental) .
-- 🖼️ **Dodawanie białego tła** – wszystkie obrazy otrzymują jednolite, czyste białe tło. Usuwa kanał alpha.
-- 🔄 **Konwersja na JPG** – zmiana formatu na bardziej kompatybilny z różnymi platformami i narzędziami. Teraz obługuje .jpeg, .png, .webp, (.gif, .tiff), .jpg.  
+-   **Wsparcie wielu formatów:** Obsługa plików WebP, JPEG, PNG, AVIF, GIF oraz TIFF.
+-   **Inteligentne Kadrowanie i Marginesy:**
+    -   Automatyczne usuwanie tła (trim).
+    -   Wykrywanie białego lub przezroczystego tła – jeśli występuje, dodaje bezpieczny margines 5px.
+    -   Dopełnianie (padding) małych zdjęć do minimum 500px z zachowaniem proporcji.
+-   **Sanityzacja Nazw Plików:** Zaawansowana logika zamiany polskich znaków (np. ą -> a), usuwania znaków specjalnych i czyszczenia nazwy.
+-   **Przetwarzanie wsadowe:** Możliwość wrzucenia wielu plików naraz.
+-   **Pobieranie jako ZIP:** Wszystkie przetworzone pliki są pakowane w jedno archiwum gotowe do pobrania.
 
-Program został zaprojektowany z myślą o prostocie i szybkości działania. To idealne rozwiązanie do przetwarzania dużych zestawów obrazów! 🎨✨  
+## 🚀 Dwa tryby pracy
 
-### Wynik działania programu to pliki jpg z nazwą umieszczoną w inpucie 
-(wszystkie polskie znaki są zamieniane na znaki bez ogonków, spacje na znak "-"). Pliki większe od height: `3600px` są zmniejszane do tego rozmiaru i width: `3000px` jak poprzednio są zmniejszane.
+Aplikacja oferuje dwa interfejsy, w zależności od potrzeb:
 
-### Wprowdzaj pliki w formie:
-`1.jpg, 2.jpeg, 3.webp` itd a otrzymasz `nazwa-1.jpg, nazwa-2.jpg` itd.
----
+### 1. Szybka Konwersja (Strona Główna)
+Idealna do błyskawicznych zadań. Wrzucasz pliki, podajesz bazową nazwę (np. ze schowka) i otrzymujesz gotowe JPEGi. Bez zbędnych ustawień.
 
-## 📦 Instalacja lokalna
+### 2. Zaawansowane Narzędzia (Tools)
+Dla zadań wymagających precyzji. Oferuje "hakerski", ciemny interfejs (z opcją Light Mode) i pozwala na:
+*   **Zarządzanie kolejnością:** Przesuwanie plików w górę/dół na liście przed wysłaniem.
+*   **Niestandardowa numeracja:** Możesz zacząć numerowanie plików od dowolnej liczby (nawet ujemnej, np. -2, -1, 0...).
+*   **Podgląd opcji:** Włączanie/wyłączanie kadrowania i skalowania do 500px.
+*   **Szybkie nazewnictwo:** Pole nazwy obsługuje automatyczne wklejanie i czyszczenie tekstu ze schowka po najechaniu myszką.
 
-### 1. Zainstaluj Node.js (LTS)  
-Upewnij się, że masz zainstalowaną wersję LTS Node.js.  
-👉 [Pobierz Node.js LTS](https://nodejs.org/en/)
+Zobacz jak to działa w praktyce:
 
-### 2. Pobierz repozytorium z GitHuba  
-Masz kilka opcji pobrania repozytorium:
-- **Klonowanie za pomocą Git**:  
+![Demo Aplikacji](1.gif)
 
-```bash
-  git clone https://github.com/LucasTerg/webp-jpeg-www.git
-```
+## 🛠️ Uruchomienie projektu
 
-- za pomocą klucza SSH:
+### Wymagania
 
-```bash
-git clone git@github.com:LucasTerg/webp-jpeg-www.git
-```
+*   Node.js (wersja LTS)
+*   npm
 
-- Pobranie pliku ZIP:
+### Instalacja
 
-[Download ZIP](https://github.com/LucasTerg/webp-jpeg-www/archive/refs/heads/main.zip)
+1.  Sklonuj repozytorium:
+    ```bash
+    git clone [TWOJE_REPO_URL]
+    cd webp-jpeg-www
+    ```
+2.  Zainstaluj zależności:
+    ```bash
+    npm install
+    ```
 
-## Uruchom tryb deweloperski
+### Uruchomienie (Tryb Deweloperski)
 
-Zainstaluj podstawowe zależności projektu w terminalu za pomocą polecenia `npm install`.
+1.  Uruchom serwer (frontend + backend):
+    ```bash
+    npm run dev
+    ```
+2.  Otwórz przeglądarkę pod adresem (zazwyczaj):
+    *   **Strona Główna:** `http://localhost:5173/`
+    *   **Narzędzia (Tools):** `http://localhost:5173/tools.html`
 
-npm i
+## 🤝 Licencja
 
-Uruchom tryb deweloperski, uruchamiając polecenie `npm run dev`.
-
-npm run dev
-
-## Otworzyć przeglądarkę na portach localhost
-
-Wejdź na stronę [http://localhost:5173](http://localhost:5173) w przeglądarce. Strona
-   ta zostanie automatycznie przeładowana po zapisaniu zmian w plikach projektu.
-
-Zobacz czy server jest włączony [http://localhost:3000](http://localhost:3000) w przeglądarce. Strona
-   ta zostanie automatycznie przeładowana po zapisaniu zmian w plikach projektu.
-
-## Instalacja na Windowsie
-
-Aby dowiedzieć się, jak zainstalować i skonfigurować to repozytorium na systemie Windows, obejrzyj poniższy film na YouTube:
-
-[![Jak zainstalować i skonfigurować repozytorium LucasTerg/webp-jpeg-www na Windowsie](https://blogs.windows.com/wp-content/uploads/mswbprod/sites/2/2018/12/43b0418862957fff963e2b2bb97306f3.png)](https://youtu.be/UIN0J5sMODM)
-
-W filmie znajdziesz szczegółowe kroki instalacji oraz uruchomienia projektu lokalnie. 🎥
+Projekt udostępniony na licencji LGPL-3.0-or-later.
