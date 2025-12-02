@@ -5,8 +5,8 @@ Wszechstronne narzędzie do przetwarzania obrazów, stworzone z myślą o szybki
 ## ✨ Główne Funkcje
 
 -   **Wsparcie wielu formatów:** Obsługa plików WebP, JPEG, PNG, AVIF, GIF oraz TIFF.
--   **Inteligentne Kadrowanie i Marginesy:**
-    -   Automatyczne usuwanie tła (trim).
+-   **Inteligentne Kadrowanie i Dopełnianie:**
+    -   Automatyczne **kadrowanie do zawartości**, usuwające jednolite obramowanie/tło.
     -   Wykrywanie białego lub przezroczystego tła – jeśli występuje, dodaje bezpieczny margines 5px.
     -   Dopełnianie (padding) małych zdjęć do minimum 500px z zachowaniem proporcji.
 -   **Sanityzacja Nazw Plików:** Zaawansowana logika zamiany polskich znaków (np. ą -> a), usuwania znaków specjalnych i czyszczenia nazwy.
