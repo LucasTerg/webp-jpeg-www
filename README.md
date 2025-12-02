@@ -1,5 +1,11 @@
 # Webp/JPEG/AVIF Image Processor
 
+<div align="center">
+
+[![URUCHOM TERAZ](https://img.shields.io/badge/LIVE_DEMO-URUCHOM_TERAZ-00ff41?style=for-the-badge&labelColor=black&color=00aa2c)](https://lucasterg.github.io/webp-jpeg-www/tools.html)
+
+</div>
+
 Wszechstronne narzędzie do przetwarzania obrazów, stworzone z myślą o szybkich konwersjach i przygotowywaniu plików zgodnie z konkretnymi standardami (Media Expert). Pozwala na szybką zmianę formatów, inteligentne kadrowanie oraz precyzyjne zarządzanie nazewnictwem plików.
 
 ## ✨ Główne Funkcje
