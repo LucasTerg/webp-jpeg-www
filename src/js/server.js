@@ -14,33 +14,28 @@ const __dirname = path.dirname(__filename);
 
 const app = express(); // Inicjalizacja aplikacji Express
 
-// Funkcja do zamiany polskich znaków na odpowiedniki bez ogonków
-const replacePolishChars = str => {
-  return str
-    .replace(/ą/g, 'a')
-    .replace(/ć/g, 'c')
-    .replace(/ę/g, 'e')
-    .replace(/ł/g, 'l')
-    .replace(/ń/g, 'n')
-    .replace(/ó/g, 'o')
-    .replace(/ś/g, 's')
-    .replace(/ź/g, 'z')
-    .replace(/ż/g, 'z')
-    .replace(/Ą/g, 'A')
-    .replace(/Ć/g, 'C')
-    .replace(/Ę/g, 'E')
-    .replace(/Ł/g, 'L')
-    .replace(/Ń/g, 'N')
-    .replace(/Ó/g, 'O')
-    .replace(/Ś/g, 'S')
-    .replace(/Ź/g, 'Z')
-    .replace(/Ż/g, 'Z')
-    .replace(/\(/g, '') // remove left parenthesis
-    .replace(/\)/g, ''); // remove right parenthesis
-};
+// Funkcja do sanityzacji nazwy pliku (polskie znaki, znaki specjalne, wielokrotne myślniki)
+const sanitizeName = str => {
+  const map = {
+    'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+    'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+  };
+  
+  // 1. Zamiana polskich znaków
+  let processed = str.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, match => map[match]);
 
-// Funkcja do zamiany spacji na "-"
-const replaceSpaces = str => str.replace(/\s+/g, '-');
+  // 2. Zamiana wszystkich znaków niebędących literami ani cyframi na myślnik
+  // (obejmuje spacje, !@#$%^&*() itp.)
+  processed = processed.replace(/[^a-zA-Z0-9]/g, '-');
+
+  // 3. Redukcja wielokrotnych myślników do jednego
+  processed = processed.replace(/-+/g, '-');
+
+  // 4. Usunięcie myślników z początku i końca
+  processed = processed.replace(/^-+|-+$/g, '');
+
+  return processed;
+};
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -52,7 +47,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const newName = req.body.newName || 'default';
-    const sanitizedName = replaceSpaces(replacePolishChars(newName));
+    const sanitizedName = sanitizeName(newName);
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(
       null,
