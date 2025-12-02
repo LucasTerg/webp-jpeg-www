@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Webp > jpeg >> GUI</title>
     <script type="module" crossorigin src="/webp-jpeg-www/index.js"></script>
-    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/styles-CfwAGYY-.css">
+    <link rel="modulepreload" crossorigin href="/webp-jpeg-www/assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/styles-B3WaMAvR.css">
   </head>
   <body>
     <header class="header">
@@ -17,6 +18,11 @@
           <use href="/webp-jpeg-www/assets/sprite-E8vg0sBb.svg#logo2"></use>
         </svg>
       </a>
+      
+      <button id="theme-toggle-main" style="background:none; border:none; cursor:pointer; font-size:1.5rem; margin-left:auto;">
+        🌗
+      </button>
+
       <!-- <ul class="nav-list">
         <li class="nav-item">
           <a class="nav-link {=$highlight-act}" href="./page-2.html">Page 2</a>
@@ -137,6 +143,95 @@
     </p>
   </div>
 </footer>
+
+
+    <!-- Floating Action Button Navigation -->
+<style>
+  .fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  
+  .fab-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #333;
+    color: #fff;
+    border: 2px solid #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Ujednolicony transition */
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: sans-serif;
+    position: relative;
+    font-size: 1rem;
+    transform: translateX(0); /* Reset dla domyślnego stanu */
+  }
+  
+  .fab-btn:hover {
+    width: 150px; /* Zwiększona szerokość dla tekstu */
+    border-radius: 25px;
+    background: #444;
+    border-color: #00ff41;
+    justify-content: flex-start;
+    padding-left: 10px; /* Dodatkowy padding z lewej */
+    transform: translateX(-10px); /* Przesunięcie całego przycisku w lewo */
+  }
+  
+  .fab-icon {
+    font-size: 24px;
+    line-height: 1;
+    min-width: 24px;
+    text-align: center;
+    /* Usuwamy transform z ikony, będzie przesuwana razem z całym przyciskiem */
+    position: absolute; /* Użyj absolute, by mieć kontrolę nad pozycją */
+    left: 8px; /* Domyślna pozycja ikony */
+    transition: left 0.3s;
+  }
+  
+  .fab-btn:hover .fab-icon {
+    left: 10px; /* Przesunięcie ikony w lewo na hover */
+    margin-right: 0; /* Reset */
+  }
+  
+  .fab-btn span {
+    opacity: 0;
+    margin-left: 40px; /* Domyślne odsunięcie tekstu, by nie nachodził na ikonę */
+    font-size: 14px;
+    transition: opacity 0.2s 0.1s;
+    pointer-events: none;
+    color: #00ff41;
+  }
+  
+  .fab-btn:hover span {
+    opacity: 1;
+    pointer-events: auto;
+    margin-left: 45px; /* Pozycja tekstu względem lewej krawędzi przycisku */
+  }
+</style>
+
+<div class="fab-container">
+  <a href="index.html" class="fab-btn" title="Strona Główna">
+    <div class="fab-icon">🏠</div>
+    <span>HOME</span>
+  </a>
+  <a href="tools.html" class="fab-btn" title="Zaawansowane Narzędzia">
+    <div class="fab-icon">🛠️</div>
+    <span>TOOLS</span>
+  </a>
+</div>
 
 
 

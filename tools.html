@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TERG Tools // Hacker Edition</title>
+    <script type="module" crossorigin src="/webp-jpeg-www/tools.js"></script>
+    <link rel="modulepreload" crossorigin href="/webp-jpeg-www/assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/tools-D1vcdqyJ.css">
+  </head>
+  <body>
+    <div class="hacker-container">
+      <header>
+        <h1><span>SYSTEM</span> NARZĘDZIOWY PIM</h1>
+        <div>
+          <a href="index.html" class="btn btn-sm">Wróć</a>
+          <button id="theme-toggle" class="btn btn-sm">L/D MODE</button>
+        </div>
+      </header>
+
+      <!-- Sekcja Lewa: Lista plików -->
+      <section class="panel">
+        <div class="panel-header">
+          <span>STREFA ZRZUTU PLIKÓW</span>
+          <button id="clear-list" class="btn btn-sm">WYCZYŚĆ</button>
+        </div>
+        
+        <div id="file-dropzone">
+          <p>PRZECIĄGNIJ PLIKI TUTAJ LUB KLIKNIJ</p>
+          <input type="file" id="file-input" multiple style="display: none;" />
+        </div>
+
+        <ul id="file-list">
+          <!-- Elementy listy generowane przez JS -->
+        </ul>
+      </section>
+
+      <!-- Sekcja Prawa: Ustawienia -->
+      <section class="panel">
+        <div class="panel-header">KONFIGURACJA OPERACJI</div>
+
+        <div class="control-group">
+          <label for="base-name">BAZA NAZWY PLIKU:</label>
+          <input type="text" id="base-name" placeholder="Np. Produkt-X" />
+        </div>
+
+        <div class="control-group">
+          <label for="start-number">NUMER STARTOWY:</label>
+          <input type="number" id="start-number" value="1" />
+          <small style="opacity: 0.7">Możesz wpisać liczby ujemne (np. -2).</small>
+        </div>
+
+        <div class="control-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="opt-crop" checked />
+            [KADROWANIE + MARGINES 5PX]
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="opt-resize" />
+            [DOPEŁNIJ DO 500PX]
+          </label>
+        </div>
+
+        <button id="execute-btn" class="btn">WYKONAJ PROCEDURĘ</button>
+      </section>
+
+      <div class="status-log" id="console-log">
+        <p>> System gotowy...</p>
+      </div>
+    </div>
+
+    <!-- Floating Action Button Navigation -->
+<style>
+  .fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  
+  .fab-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #333;
+    color: #fff;
+    border: 2px solid #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Ujednolicony transition */
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: sans-serif;
+    position: relative;
+    font-size: 1rem;
+    transform: translateX(0); /* Reset dla domyślnego stanu */
+  }
+  
+  .fab-btn:hover {
+    width: 150px; /* Zwiększona szerokość dla tekstu */
+    border-radius: 25px;
+    background: #444;
+    border-color: #00ff41;
+    justify-content: flex-start;
+    padding-left: 10px; /* Dodatkowy padding z lewej */
+    transform: translateX(-10px); /* Przesunięcie całego przycisku w lewo */
+  }
+  
+  .fab-icon {
+    font-size: 24px;
+    line-height: 1;
+    min-width: 24px;
+    text-align: center;
+    /* Usuwamy transform z ikony, będzie przesuwana razem z całym przyciskiem */
+    position: absolute; /* Użyj absolute, by mieć kontrolę nad pozycją */
+    left: 8px; /* Domyślna pozycja ikony */
+    transition: left 0.3s;
+  }
+  
+  .fab-btn:hover .fab-icon {
+    left: 10px; /* Przesunięcie ikony w lewo na hover */
+    margin-right: 0; /* Reset */
+  }
+  
+  .fab-btn span {
+    opacity: 0;
+    margin-left: 40px; /* Domyślne odsunięcie tekstu, by nie nachodził na ikonę */
+    font-size: 14px;
+    transition: opacity 0.2s 0.1s;
+    pointer-events: none;
+    color: #00ff41;
+  }
+  
+  .fab-btn:hover span {
+    opacity: 1;
+    pointer-events: auto;
+    margin-left: 45px; /* Pozycja tekstu względem lewej krawędzi przycisku */
+  }
+</style>
+
+<div class="fab-container">
+  <a href="index.html" class="fab-btn" title="Strona Główna">
+    <div class="fab-icon">🏠</div>
+    <span>HOME</span>
+  </a>
+  <a href="tools.html" class="fab-btn" title="Zaawansowane Narzędzia">
+    <div class="fab-icon">🛠️</div>
+    <span>TOOLS</span>
+  </a>
+</div>
+
+  </body>
+</html>
