@@ -35,7 +35,7 @@ Zobacz jak to działa w praktyce:
 
 ### Wymagania
 
-*   Node.js (wersja LTS)
+*   [Node.js (wersja LTS)](https://nodejs.org/en/download)
 *   npm
 
 ### Instalacja
