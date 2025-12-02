@@ -27,8 +27,8 @@
         
         <div id="file-dropzone">
           <p>PRZECIĄGNIJ PLIKI TUTAJ LUB KLIKNIJ</p>
-          <input type="file" id="file-input" multiple style="display: none;" />
         </div>
+        <input type="file" id="file-input" multiple style="display: none;" />
 
         <ul id="file-list">
           <!-- Elementy listy generowane przez JS -->
@@ -59,6 +59,15 @@
             <input type="checkbox" id="opt-resize" />
             [DOPEŁNIJ DO 500PX]
           </label>
+        </div>
+
+        <div class="control-group">
+          <label for="processing-mode">TRYB PRZETWARZANIA:</label>
+          <select id="processing-mode" style="width: 100%; background: var(--bg-color); color: var(--accent-color); border: 1px solid var(--border-color); padding: 8px;">
+            <option value="local">LOKALNY (Przeglądarka - GitHub Pages)</option>
+            <option value="server">SERWEROWY (Node.js - wymagany backend)</option>
+          </select>
+          <small style="opacity: 0.7; display: block; margin-top: 5px;">Tryb lokalny działa bez internetu i serwera.</small>
         </div>
 
         <button id="execute-btn" class="btn">WYKONAJ PROCEDURĘ</button>
