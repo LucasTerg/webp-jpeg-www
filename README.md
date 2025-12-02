@@ -11,6 +11,9 @@ Wszechstronne narzędzie do przetwarzania obrazów, stworzone z myślą o szybki
     -   Dopełnianie (padding) małych zdjęć do minimum 500px z zachowaniem proporcji.
 -   **Sanityzacja Nazw Plików:** Zaawansowana logika zamiany polskich znaków (np. ą -> a), usuwania znaków specjalnych i czyszczenia nazwy.
 -   **Przetwarzanie wsadowe:** Możliwość wrzucenia wielu plików naraz.
+-   **Tryb Hybrydowy:** Unikalna architektura pozwalająca na pracę w dwóch trybach:
+    -   **Lokalny (Client-Side):** Przetwarzanie odbywa się w całości w Twojej przeglądarce (Canvas API). Nie wymaga serwera, działa offline i na darmowych hostingach (np. GitHub Pages).
+    -   **Serwerowy (Node.js):** Wykorzystuje moc backendu i biblioteki `sharp` dla maksymalnej wydajności przy bardzo dużych plikach.
 -   **Pobieranie jako ZIP:** Wszystkie przetworzone pliki są pakowane w jedno archiwum gotowe do pobrania.
 
 ## 🚀 Dwa tryby pracy
@@ -22,6 +25,7 @@ Idealna do błyskawicznych zadań. Wrzucasz pliki, podajesz bazową nazwę (np. 
 
 ### 2. Zaawansowane Narzędzia (Tools)
 Dla zadań wymagających precyzji. Oferuje "hakerski", ciemny interfejs (z opcją Light Mode) i pozwala na:
+*   **Wybór silnika przetwarzania:** Przełącznik między trybem **LOKALNYM** (domyślny, działa w przeglądarce) a **SERWEROWYM** (wymaga uruchomionego backendu Node.js).
 *   **Zarządzanie kolejnością:** Przesuwanie plików w górę/dół na liście przed wysłaniem.
 *   **Niestandardowa numeracja:** Możesz zacząć numerowanie plików od dowolnej liczby (nawet ujemnej, np. -2, -1, 0...).
 *   **Podgląd opcji:** Włączanie/wyłączanie kadrowania i skalowania do 500px.
