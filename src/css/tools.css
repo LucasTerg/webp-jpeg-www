@@ -133,18 +133,47 @@ h1 span {
   border-bottom: none;
 }
 
+/* Checkbox w liście plików */
+.file-select {
+  margin-right: 10px;
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
 .file-info {
   flex-grow: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-right: 10px;
+  cursor: help; /* Zmiana kursora na ? przy najechaniu */
 }
 
 .file-controls {
   display: flex;
   gap: 5px;
 }
+
+/* Tooltip podglądu */
+.preview-tooltip {
+  position: fixed;
+  display: none;
+  background: var(--panel-bg);
+  border: 2px solid var(--accent-color);
+  padding: 5px;
+  z-index: 1000;
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
+  max-width: 300px;
+  max-height: 300px;
+  pointer-events: none; /* Żeby myszka nie wchodziła w interakcję */
+}
+
+.preview-tooltip img {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
 
 /* Controls Panel */
 .control-group {

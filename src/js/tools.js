@@ -240,22 +240,80 @@ function renderList() {
     const li = document.createElement('li');
     li.className = 'file-item';
     
-    li.innerHTML = `
-      <span class="file-info">[${index + 1}] ${item.file.name} (${(item.file.size / 1024).toFixed(1)} KB)</span>
-      <div class="file-controls">
+    // Checkbox
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'file-select';
+    checkbox.checked = item.selected;
+    checkbox.onchange = (e) => {
+        item.selected = e.target.checked;
+    };
+
+    // Info Name with Hover Preview
+    const span = document.createElement('span');
+    span.className = 'file-info';
+    span.textContent = `[${index + 1}] ${item.file.name} (${(item.file.size / 1024).toFixed(1)} KB)`;
+    
+    // Hover Eventy
+    span.addEventListener('mouseenter', (e) => showPreview(e, item.file));
+    span.addEventListener('mouseleave', hidePreview);
+    span.addEventListener('mousemove', movePreview); // Żeby tooltip chodził za myszką
+
+    // Controls
+    const divControls = document.createElement('div');
+    divControls.className = 'file-controls';
+    
+    divControls.innerHTML = `
         <button class="btn btn-sm" onclick="window.moveUp(${index})">▲</button>
         <button class="btn btn-sm" onclick="window.moveDown(${index})">▼</button>
         <button class="btn btn-sm" onclick="window.removeFile(${index})" style="color:var(--error-color); border-color:var(--error-color);">X</button>
-      </div>
     `;
+
+    li.appendChild(checkbox);
+    li.appendChild(span);
+    li.appendChild(divControls);
     fileList.appendChild(li);
   });
 }
 
+// --- PODGLĄD ZDJĘĆ ---
+const tooltip = document.getElementById('preview-tooltip');
+
+function showPreview(e, file) {
+    if(!tooltip) return;
+    
+    // Tworzymy URL tylko na chwilę
+    const url = URL.createObjectURL(file);
+    tooltip.innerHTML = `<img src="${url}" alt="Preview">`;
+    tooltip.style.display = 'block';
+    
+    // Pozycjonowanie wstępne
+    movePreview(e);
+}
+
+function movePreview(e) {
+    if(!tooltip) return;
+    // Przesunięcie o 15px żeby nie zasłaniać kursora
+    const x = e.clientX + 15;
+    const y = e.clientY + 15;
+    
+    // Sprawdzenie czy nie wychodzi poza ekran (proste)
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+
+function hidePreview() {
+    if(!tooltip) return;
+    tooltip.style.display = 'none';
+    tooltip.innerHTML = ''; // Czyścimy img żeby zwolnić pamięć (browser garbage collector)
+}
+
+
 function addFiles(files) {
   Array.from(files).forEach(file => {
     if (file.type.startsWith('image/')) {
-      filesQueue.push({ file, id: Date.now() + Math.random() });
+      // Domyślnie zaznaczone (selected: true)
+      filesQueue.push({ file, id: Date.now() + Math.random(), selected: true });
       log(`Dodano: ${file.name}`);
     } else {
       log(`BŁĄD: ${file.name} nie jest obrazem.`);
@@ -280,7 +338,77 @@ window.moveDown = (index) => {
 };
 
 window.removeFile = (index) => {
-  log(`Usunięto: ${filesQueue[index].file.name}`);
-  filesQueue.splice(index, 1);
+  const targetItem = filesQueue[index];
+  
+  if (targetItem.selected) {
+      // GRUPOWE USUWANIE: Jeśli kliknięto na zaznaczony element, usuń WSZYSTKIE zaznaczone
+      const initialCount = filesQueue.length;
+      filesQueue = filesQueue.filter(item => !item.selected);
+      const removedCount = initialCount - filesQueue.length;
+      log(`Usunięto zaznaczone pliki: ${removedCount}`);
+  } else {
+      // POJEDYNCZE USUWANIE: Kliknięto na niezaznaczony element -> usuń tylko jego
+      log(`Usunięto: ${targetItem.file.name}`);
+      filesQueue.splice(index, 1);
+  }
   renderList();
 };
+
+// Zaktualizowana funkcja executeLogic uwzględniająca TYLKO zaznaczone pliki
+async function executeLogic() {
+  // Filtrowanie
+  const selectedFiles = filesQueue.filter(item => item.selected);
+
+  if (selectedFiles.length === 0) {
+    log('BŁĄD: Brak zaznaczonych plików do przetworzenia.');
+    return;
+  }
+
+  const baseName = baseNameInput.value.trim() || 'image';
+  const startNum = parseInt(startNumberInput.value) || 1;
+  const mode = processingModeSelect.value;
+
+  log(`Rozpoczynanie procedury dla ${selectedFiles.length} plików (${mode === 'local' ? 'LOKALNIE' : 'SERWER'})...`);
+
+  if (mode === 'local') {
+    const options = { 
+      baseName, 
+      startNumber: startNum, 
+      optCrop: optCrop.checked, 
+      optTrimOnly: optTrimOnly.checked,
+      optResize: optResize.checked 
+    };
+
+    try {
+      const { processFilesClientSide } = await import('./client-processor.js');
+      // Przekazujemy tylko zaznaczone!
+      const zipBlob = await processFilesClientSide(selectedFiles, options, (msg) => log(msg));
+      
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'processed.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      log('SUKCES: Gotowe (Lokalnie).');
+    } catch (e) {
+      log(`BŁĄD LOKALNY: ${e.message}`);
+    }
+    return;
+  }
+
+  // SERVER MODE
+  const formData = new FormData();
+  selectedFiles.forEach((item) => {
+    formData.append('images', item.file);
+  });
+  formData.append('newName', baseName);
+  formData.append('startNumber', startNum);
+  formData.append('optCrop', optCrop.checked);
+  formData.append('optTrimOnly', optTrimOnly.checked);
+  formData.append('optResize', optResize.checked);
+
+  try {
+    const API_URL = 'http://localhost:3000/upload-tools';
+    const response = await fetch(API_URL, { method: 'POST', body: formData });
