@@ -246,16 +246,21 @@ app.post(
             currentHeight += 10;
           }
 
-          // 4. Dopełnij do 500px jeśli mniej
+          // 4. Dopełnij do 500px jeśli mniej (BEZ SKALOWANIA - padding)
           const targetWidth = Math.max(currentWidth, 500);
           const targetHeight = Math.max(currentHeight, 500);
 
-          // Jeśli po wszystkich operacjach obraz jest mniejszy niż 500x500 (w którymś wymiarze), powiększ canvas
           if (currentWidth < targetWidth || currentHeight < targetHeight) {
-            currentImage = currentImage.resize({
-              width: targetWidth,
-              height: targetHeight,
-              fit: 'contain',
+            const xPad = targetWidth - currentWidth;
+            const yPad = targetHeight - currentHeight;
+            const left = Math.floor(xPad / 2);
+            const top = Math.floor(yPad / 2);
+
+            currentImage = currentImage.extend({
+              top: top,
+              bottom: yPad - top,
+              left: left,
+              right: xPad - left,
               background: '#ffffff',
             });
           }
@@ -442,16 +447,22 @@ app.post(
           width = bufferAfterCrop.info.width;
           height = bufferAfterCrop.info.height;
 
-          // --- LOGIKA RESIZE (Dopełnienie do 500px) ---
+          // --- LOGIKA RESIZE (Dopełnienie do 500px - BEZ SKALOWANIA) ---
           if (optResize) {
              const targetWidth = Math.max(width, 500);
              const targetHeight = Math.max(height, 500);
              
              if (width < targetWidth || height < targetHeight) {
-               image = image.resize({
-                 width: targetWidth,
-                 height: targetHeight,
-                 fit: 'contain',
+               const xPad = targetWidth - width;
+               const yPad = targetHeight - height;
+               const left = Math.floor(xPad / 2);
+               const top = Math.floor(yPad / 2);
+               
+               image = image.extend({
+                 top: top,
+                 bottom: yPad - top,
+                 left: left,
+                 right: xPad - left,
                  background: '#ffffff'
                });
              }
