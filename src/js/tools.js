@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startNumberInput = document.getElementById('start-number');
     optCrop = document.getElementById('opt-crop');
     optTrimOnly = document.getElementById('opt-trim-only');
+    optAddMargin = document.getElementById('opt-add-margin');
     optResize = document.getElementById('opt-resize');
     // optBgRemove = document.getElementById('opt-bg-remove');
 
