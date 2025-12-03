@@ -473,7 +473,6 @@ app.post(
 
           // Pobieramy zaktualizowane metadane po ew. kadrowaniu, aby resize działał poprawnie
           const bufferAfterCrop = await image.toBuffer({ resolveWithObject: true });
-          const bufferAfterCrop = await image.toBuffer({ resolveWithObject: true });
           image = sharp(bufferAfterCrop.data);
           width = bufferAfterCrop.info.width;
           height = bufferAfterCrop.info.height;
