@@ -299,6 +299,7 @@ async function executeLogic() {
       startNumber: startNum, 
       optCrop: optCrop.checked, 
       optTrimOnly: optTrimOnly.checked,
+      optAddMargin: optAddMargin.checked,
       optResize: optResize.checked 
     };
 
@@ -330,6 +331,7 @@ async function executeLogic() {
   formData.append('startNumber', startNum);
   formData.append('optCrop', optCrop.checked);
   formData.append('optTrimOnly', optTrimOnly.checked);
+  formData.append('optAddMargin', optAddMargin.checked);
   formData.append('optResize', optResize.checked);
 
   try {
