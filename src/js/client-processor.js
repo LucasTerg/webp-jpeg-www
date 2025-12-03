@@ -84,7 +84,7 @@ const getTrimmedBounds = (ctx, width, height) => {
 
 export const processFilesClientSide = async (filesQueue, options, onProgress) => {
   const zip = new JSZip();
-  const { baseName, startNumber, optCrop, optResize } = options;
+  const { baseName, startNumber, optCrop, optTrimOnly, optResize } = options;
 
   let processedCount = 0;
 
@@ -108,7 +108,9 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
       // Logika flagi "Should Add Margin" (z serwera: białe rogi lub przezroczystość)
       // Sprawdzamy 4 rogi oryginału
       let shouldAddMargin = false;
-      if (optCrop) {
+      
+      // Sprawdzamy warunki do kadrowania jeśli którakolwiek opcja jest włączona
+      if (optCrop || optTrimOnly) {
           const corners = [
             { x: 0, y: 0 },
             { x: img.width - 1, y: 0 },
@@ -160,15 +162,15 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
               ctx = trimmedCtx;
           }
       }
-
+      
       // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) ---
       // Sprawdzamy czy po ewentualnym dodaniu marginesu (+10px) obraz nie przekroczy limitu.
       // Limit: 3000px szerokości, 3600px wysokości.
       const MAX_W = 3000;
       const MAX_H = 3600;
       
-      // Ile dodamy?
-      const marginAdd = (optCrop && shouldAddMargin) ? 10 : 0;
+      // Ile dodamy? Tylko jeśli optCrop aktywny i NIE optTrimOnly (bo optTrimOnly wyłącza margines)
+      const marginAdd = (optCrop && !optTrimOnly && shouldAddMargin) ? 10 : 0;
       
       // Sprawdź obecne wymiary
       let currentW = canvas.width;
@@ -199,8 +201,8 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
       }
 
       
-      // Dodawanie marginesu (jeśli flaga aktywna)
-      if (optCrop && shouldAddMargin) {
+      // Dodawanie marginesu (tylko jeśli optCrop i NIE optTrimOnly)
+      if (optCrop && !optTrimOnly && shouldAddMargin) {
           const marginCanvas = document.createElement('canvas');
           marginCanvas.width = canvas.width + 10; // 5px z lewej + 5px z prawej
           marginCanvas.height = canvas.height + 10;
@@ -216,7 +218,6 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
           canvas = marginCanvas;
           ctx = marginCtx;
       }
-
       // Padding do 500px (optResize)
       if (optResize) {
           const targetW = Math.max(canvas.width, 500);

@@ -351,6 +351,7 @@ app.post(
     // Parsowanie opcji (FormData przesyła jako stringi 'true'/'false')
     const startNumber = parseInt(req.body.startNumber) || 1;
     const optCrop = req.body.optCrop === 'true';
+    const optTrimOnly = req.body.optTrimOnly === 'true';
     const optResize = req.body.optResize === 'true'; // Dopełnienie do 500px
 
     try {
@@ -372,7 +373,7 @@ app.post(
           let { width, height } = metadata;
 
           // --- LOGIKA KADROWANIA I MARGINESU (jeśli zaznaczona) ---
-          if (optCrop) {
+          if (optCrop || optTrimOnly) {
              // 1. Sprawdź 4 rogi
             const corners = [
               { left: 0, top: 0 },
@@ -408,7 +409,8 @@ app.post(
 
             // 3. Margines
             const shouldAddMargin = hasBackgroundContext || wasTrimmed;
-            const marginAdd = shouldAddMargin ? 10 : 0;
+            // Dodajemy margines TYLKO jeśli optCrop jest TRUE i optTrimOnly jest FALSE
+            const marginAdd = (optCrop && !optTrimOnly && shouldAddMargin) ? 10 : 0;
 
             // --- LIMIT WYMIARÓW 3000x3600 (Tools) ---
             const MAX_W = 3000;
@@ -432,7 +434,7 @@ app.post(
                currentHeight = resizedBuffer.info.height;
             }
 
-            if (shouldAddMargin) {
+            if (optCrop && !optTrimOnly && shouldAddMargin) {
               image = image.extend({
                 top: 5, bottom: 5, left: 5, right: 5,
                 background: '#ffffff'

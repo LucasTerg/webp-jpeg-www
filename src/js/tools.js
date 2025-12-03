@@ -3,7 +3,7 @@
 // alert("Tools script loaded!");
 
 let filesQueue = [];
-let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput, optCrop, optResize, optBgRemove;
+let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput, optCrop, optTrimOnly, optResize, optBgRemove;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Loaded - initializing Tools");
@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     baseNameInput = document.getElementById('base-name');
     startNumberInput = document.getElementById('start-number');
     optCrop = document.getElementById('opt-crop');
+    optTrimOnly = document.getElementById('opt-trim-only');
     optResize = document.getElementById('opt-resize');
     // optBgRemove = document.getElementById('opt-bg-remove');
 
@@ -132,6 +133,7 @@ async function executeLogic() {
       baseName, 
       startNumber: startNum, 
       optCrop: optCrop.checked, 
+      optTrimOnly: optTrimOnly.checked,
       optResize: optResize.checked 
     };
 
@@ -161,6 +163,7 @@ async function executeLogic() {
   formData.append('newName', baseName);
   formData.append('startNumber', startNum);
   formData.append('optCrop', optCrop.checked);
+  formData.append('optTrimOnly', optTrimOnly.checked);
   formData.append('optResize', optResize.checked);
 
   try {
