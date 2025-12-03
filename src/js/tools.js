@@ -127,87 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- WYKONANIE (UPLOAD) ---
     if(executeBtn) {
         executeBtn.addEventListener('click', async () => {
-            // ... (logika executeBtn przeniesiona tutaj, korzystająca ze zmiennych z closure)
             executeLogic();
         });
     }
 });
-
-// Funkcja pomocnicza dla execute, żeby nie robić gigantycznego zagnieżdżenia
-async function executeLogic() {
-  if (filesQueue.length === 0) {
-    log('BŁĄD: Brak plików do przetworzenia.');
-    return;
-  }
-
-  const baseName = baseNameInput.value.trim() || 'image';
-  const startNum = parseInt(startNumberInput.value) || 1;
-  const mode = processingModeSelect.value;
-
-  log(`Rozpoczynanie procedury (${mode === 'local' ? 'LOKALNIE' : 'SERWER'})...`);
-
-  if (mode === 'local') {
-    const options = { 
-      baseName, 
-      startNumber: startNum, 
-      optCrop: optCrop.checked, 
-      optTrimOnly: optTrimOnly.checked,
-      optResize: optResize.checked 
-    };
-
-    try {
-      const { processFilesClientSide } = await import('./client-processor.js');
-      const zipBlob = await processFilesClientSide(filesQueue, options, (msg) => log(msg));
-      
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'processed.zip';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      log('SUKCES: Gotowe (Lokalnie).');
-    } catch (e) {
-      log(`BŁĄD LOKALNY: ${e.message}`);
-    }
-    return;
-  }
-
-  // SERVER MODE
-  const formData = new FormData();
-  filesQueue.forEach((item) => {
-    formData.append('images', item.file);
-  });
-  formData.append('newName', baseName);
-  formData.append('startNumber', startNum);
-  formData.append('optCrop', optCrop.checked);
-  formData.append('optTrimOnly', optTrimOnly.checked);
-  formData.append('optResize', optResize.checked);
-
-  try {
-    const API_URL = 'http://localhost:3000/upload-tools';
-    const response = await fetch(API_URL, { method: 'POST', body: formData });
-
-    if (response.ok) {
-      log('SUKCES: Pliki przetworzone.');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'processed.zip';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      log('Rozpoczęto pobieranie archiwum.');
-    } else {
-      const errText = await response.text();
-      log(`BŁĄD SERWERA: ${errText}`);
-    }
-  } catch (error) {
-    log(`BŁĄD SIECI: ${error.message}`);
-  }
-}
-
 
 // --- LOGOWANIE ---
 function log(message) {
@@ -412,3 +335,23 @@ async function executeLogic() {
   try {
     const API_URL = 'http://localhost:3000/upload-tools';
     const response = await fetch(API_URL, { method: 'POST', body: formData });
+
+    if (response.ok) {
+      log('SUKCES: Pliki przetworzone.');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'processed.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      log('Rozpoczęto pobieranie archiwum.');
+    } else {
+      const errText = await response.text();
+      log(`BŁĄD SERWERA: ${errText}`);
+    }
+  } catch (error) {
+    log(`BŁĄD SIECI: ${error.message}`);
+  }
+}
