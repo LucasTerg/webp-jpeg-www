@@ -81,12 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SANITYZACJA I SCHOWEK ---
     if(baseNameInput) {
-        baseNameInput.addEventListener('mouseenter', async () => {
-            // if (baseNameInput.value.trim() !== '') return; // Usunięte na prośbę, aby umożliwić aktualizację
+        const updateFromClipboard = async () => {
             try {
                 const text = await navigator.clipboard.readText();
                 if (text) {
                     const cleanText = sanitizeName(text);
+                    // Aktualizuj jeśli tekst jest poprawny i inny niż obecny
                     if (cleanText && baseNameInput.value !== cleanText) {
                         baseNameInput.value = cleanText;
                         baseNameInput.classList.add('flash-input');
@@ -94,7 +94,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         log(`Wklejono ze schowka: ${cleanText}`);
                     }
                 }
-            } catch (err) {}
+            } catch (err) {
+                // Ignoruj błędy (np. brak uprawnień)
+            }
+        };
+
+        // Reakcja na najechanie (standardowe działanie)
+        baseNameInput.addEventListener('mouseenter', updateFromClipboard);
+        
+        // Reakcja na kliknięcie (dla pewności/alternatywy)
+        baseNameInput.addEventListener('click', updateFromClipboard);
+        
+        // Reakcja na focus elementu (np. tabowanie)
+        baseNameInput.addEventListener('focus', updateFromClipboard);
+
+        // Reakcja na powrót do okna przeglądarki (jeśli mysz jest nad inputem)
+        window.addEventListener('focus', () => {
+            if (baseNameInput.matches(':hover')) {
+                updateFromClipboard();
+            }
         });
 
         baseNameInput.addEventListener('input', () => {
