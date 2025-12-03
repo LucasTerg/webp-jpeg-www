@@ -1,8 +1,5 @@
 # Project
 /src/js/uploads/**
-GEMINI.md
-development_notes.md
-git-switch.sh
 
 # Logs
 logs
@@ -28,3 +25,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env*
+.env/
+development_notes.md
+git-switch.sh
+GEMINI.md
