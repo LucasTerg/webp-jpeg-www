@@ -3,7 +3,7 @@
 // alert("Tools script loaded!");
 
 let filesQueue = [];
-let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput, optCrop, optTrimOnly, optResize, optBgRemove;
+let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput, optCrop, optTrimOnly, optAddMargin, optResize, optBgRemove;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Loaded - initializing Tools");
