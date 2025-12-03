@@ -55,6 +55,70 @@ const storage = multer.diskStorage({
     );
   },
 });
+
+// --- Helper do inteligentnego zapisu z limitem 3MB ---
+const saveOptimizedImage = async (sharpInstance, outputPath) => {
+  // Limity w bajtach
+  const LIMIT_SMALL = 1.5 * 1024 * 1024; // 1.5 MB
+  const LIMIT_HARD = 3.0 * 1024 * 1024;  // 3.0 MB
+
+  // 1. BAZA: Max jakość (prawie bez zmian dla małych plików)
+  // Używamy clone(), aby nie modyfikować instancji w pętli błędnie
+  let buffer = await sharpInstance
+    .clone()
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: '4:4:4' })
+    .toBuffer();
+
+  // Jeśli plik jest mały (< 1.5 MB), zapisujemy w max jakości
+  if (buffer.length <= LIMIT_SMALL) {
+    await fsPromises.writeFile(outputPath, buffer);
+    return;
+  }
+
+  // 2. Jeśli > 1.5 MB, próbujemy zejść poniżej 3 MB (start: 96)
+  buffer = await sharpInstance
+    .clone()
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 96, mozjpeg: true })
+    .toBuffer();
+
+  if (buffer.length <= LIMIT_HARD) {
+    await fsPromises.writeFile(outputPath, buffer);
+    return;
+  }
+
+  // 3. Fallback: 92
+  buffer = await sharpInstance
+    .clone()
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 92, mozjpeg: true })
+    .toBuffer();
+
+  if (buffer.length <= LIMIT_HARD) {
+    await fsPromises.writeFile(outputPath, buffer);
+    return;
+  }
+
+  // 4. Fallback: 89
+  buffer = await sharpInstance
+    .clone()
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 89, mozjpeg: true })
+    .toBuffer();
+
+  if (buffer.length <= LIMIT_HARD) {
+    await fsPromises.writeFile(outputPath, buffer);
+    return;
+  }
+
+  // 5. Ostateczność: 85 (Zapisz niezależnie od wielkości)
+  await sharpInstance
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 85, mozjpeg: true })
+    .toFile(outputPath);
+};
+
 const upload = multer({
   dest: path.join(__dirname, 'uploads'),
   fileFilter: (req, file, cb) => {
@@ -265,11 +329,8 @@ app.post(
             });
           }
 
-          // 5. Zapisz
-          await currentImage
-            .flatten({ background: '#ffffff' })
-            .jpeg({ quality: 99, progressive: true, optimiseScans: true })
-            .toFile(outputPath);
+          // 5. Zapisz (z optymalizacją)
+          await saveOptimizedImage(currentImage, outputPath);
 
           console.log(`Zapisano plik: ${outputPath}`);
           await fsPromises.unlink(inputPath); 
@@ -498,11 +559,8 @@ app.post(
              }
           }
 
-          // Zapis
-          await image
-            .flatten({ background: '#ffffff' })
-            .jpeg({ quality: 99, progressive: true, optimiseScans: true })
-            .toFile(outputPath);
+          // Zapis (z optymalizacją)
+          await saveOptimizedImage(image, outputPath);
 
           await fsPromises.unlink(inputPath);
         } catch (err) {
