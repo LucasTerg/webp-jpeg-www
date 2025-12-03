@@ -61,13 +61,19 @@ const saveOptimizedImage = async (sharpInstance, outputPath) => {
   // Limity w bajtach
   const LIMIT_SMALL = 1.5 * 1024 * 1024; // 1.5 MB
   const LIMIT_HARD = 3.0 * 1024 * 1024;  // 3.0 MB
+  
+  // Wspólne opcje dla wszystkich stopni kompresji
+  const baseOptions = {
+      mozjpeg: true,
+      progressive: true,
+      optimiseScans: true
+  };
 
   // 1. BAZA: Max jakość (prawie bez zmian dla małych plików)
-  // Używamy clone(), aby nie modyfikować instancji w pętli błędnie
   let buffer = await sharpInstance
     .clone()
     .flatten({ background: '#ffffff' })
-    .jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: '4:4:4' })
+    .jpeg({ ...baseOptions, quality: 100, chromaSubsampling: '4:4:4' })
     .toBuffer();
 
   // Jeśli plik jest mały (< 1.5 MB), zapisujemy w max jakości
@@ -80,7 +86,7 @@ const saveOptimizedImage = async (sharpInstance, outputPath) => {
   buffer = await sharpInstance
     .clone()
     .flatten({ background: '#ffffff' })
-    .jpeg({ quality: 96, mozjpeg: true })
+    .jpeg({ ...baseOptions, quality: 96 })
     .toBuffer();
 
   if (buffer.length <= LIMIT_HARD) {
@@ -92,7 +98,7 @@ const saveOptimizedImage = async (sharpInstance, outputPath) => {
   buffer = await sharpInstance
     .clone()
     .flatten({ background: '#ffffff' })
-    .jpeg({ quality: 92, mozjpeg: true })
+    .jpeg({ ...baseOptions, quality: 92 })
     .toBuffer();
 
   if (buffer.length <= LIMIT_HARD) {
@@ -104,7 +110,7 @@ const saveOptimizedImage = async (sharpInstance, outputPath) => {
   buffer = await sharpInstance
     .clone()
     .flatten({ background: '#ffffff' })
-    .jpeg({ quality: 89, mozjpeg: true })
+    .jpeg({ ...baseOptions, quality: 89 })
     .toBuffer();
 
   if (buffer.length <= LIMIT_HARD) {
@@ -115,7 +121,7 @@ const saveOptimizedImage = async (sharpInstance, outputPath) => {
   // 5. Ostateczność: 85 (Zapisz niezależnie od wielkości)
   await sharpInstance
     .flatten({ background: '#ffffff' })
-    .jpeg({ quality: 85, mozjpeg: true })
+    .jpeg({ ...baseOptions, quality: 85 })
     .toFile(outputPath);
 };
 
