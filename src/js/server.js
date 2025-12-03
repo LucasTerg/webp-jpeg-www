@@ -352,6 +352,7 @@ app.post(
     const startNumber = parseInt(req.body.startNumber) || 1;
     const optCrop = req.body.optCrop === 'true';
     const optTrimOnly = req.body.optTrimOnly === 'true';
+    const optAddMargin = req.body.optAddMargin === 'true';
     const optResize = req.body.optResize === 'true'; // Dopełnienie do 500px
 
     try {
@@ -407,43 +408,71 @@ app.post(
             let currentHeight = trimmedData.info.height;
             const wasTrimmed = currentWidth < width || currentHeight < height;
 
-            // 3. Margines
+            // 3. Decyzja o marginesie (WARUNKOWYM - ze starej logiki)
             const shouldAddMargin = hasBackgroundContext || wasTrimmed;
-            // Dodajemy margines TYLKO jeśli optCrop jest TRUE i optTrimOnly jest FALSE
-            const marginAdd = (optCrop && !optTrimOnly && shouldAddMargin) ? 10 : 0;
-
-            // --- LIMIT WYMIARÓW 3000x3600 (Tools) ---
-            const MAX_W = 3000;
-            const MAX_H = 3600;
+            // Zachowujemy informację, że stary algorytm "chciałby" dodać margines
+            // ale finalne dodanie nastąpi w nowym bloku poniżej, który łączy oba warunki.
+            // Tutaj tylko aktualizujemy 'image' po trimie.
             
-            if ((currentWidth + marginAdd) > MAX_W || (currentHeight + marginAdd) > MAX_H) {
-               const maxContentW = MAX_W - marginAdd;
-               const maxContentH = MAX_H - marginAdd;
-               
-               image = image.resize({
-                 width: maxContentW,
-                 height: maxContentH,
-                 fit: 'inside',
-                 withoutEnlargement: true
-               });
-               
-               // Aktualizacja metadanych
-               const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
-               image = sharp(resizedBuffer.data);
-               currentWidth = resizedBuffer.info.width;
-               currentHeight = resizedBuffer.info.height;
-            }
+            // UWAGA: Wcześniejsza logika dodawała margines OD RAZU tutaj.
+            // Teraz musimy to przenieść niżej, aby obsłużyć też optAddMargin
+            
+            // Zapiszmy stan "conditional"
+            image.metadata().then(m => {
+                width = m.width;
+                height = m.height;
+            });
+            // Hack: W tym miejscu 'image' to już po trimie. 
+            // Zmienne currentWidth/Height mają wymiary po trimie.
+            
+            // Przekazujemy flagę dalej
+            var effectiveConditionalMargin = (optCrop && !optTrimOnly && shouldAddMargin);
+          } else {
+             var effectiveConditionalMargin = false;
+             // Jeśli nie było crop, width/height są oryginalne
+             var currentWidth = width;
+             var currentHeight = height;
+          }
 
-            if (optCrop && !optTrimOnly && shouldAddMargin) {
-              image = image.extend({
-                top: 5, bottom: 5, left: 5, right: 5,
-                background: '#ffffff'
-              });
-              // Aktualizacja zmiennych pomocniczych nie jest konieczna bo image chain leci dalej
-            }
+          // --- NOWA ZINTEGROWANA LOGIKA MARGINESÓW I LIMITÓW ---
+          const forcedMargin = optAddMargin;
+          const willAddMargin = effectiveConditionalMargin || forcedMargin;
+          const marginAdd = willAddMargin ? 10 : 0;
+
+          // --- LIMIT WYMIARÓW 3000x3600 (Tools) ---
+          const MAX_W = 3000;
+          const MAX_H = 3600;
+          
+          // Jeśli nie wchodziliśmy w blok if(optCrop...), musimy upewnić się że mamy aktualne wymiary
+          // (sharp chain jest lazy, ale currentWidth/Height powinny być ok)
+          
+          if ((currentWidth + marginAdd) > MAX_W || (currentHeight + marginAdd) > MAX_H) {
+             const maxContentW = MAX_W - marginAdd;
+             const maxContentH = MAX_H - marginAdd;
+             
+             image = image.resize({
+               width: maxContentW,
+               height: maxContentH,
+               fit: 'inside',
+               withoutEnlargement: true
+             });
+             
+             // Aktualizacja metadanych
+             const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
+             image = sharp(resizedBuffer.data);
+             currentWidth = resizedBuffer.info.width;
+             currentHeight = resizedBuffer.info.height;
+          }
+
+          if (willAddMargin) {
+            image = image.extend({
+              top: 5, bottom: 5, left: 5, right: 5,
+              background: '#ffffff'
+            });
           }
 
           // Pobieramy zaktualizowane metadane po ew. kadrowaniu, aby resize działał poprawnie
+          const bufferAfterCrop = await image.toBuffer({ resolveWithObject: true });
           const bufferAfterCrop = await image.toBuffer({ resolveWithObject: true });
           image = sharp(bufferAfterCrop.data);
           width = bufferAfterCrop.info.width;

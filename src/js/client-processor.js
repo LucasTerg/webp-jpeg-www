@@ -84,7 +84,7 @@ const getTrimmedBounds = (ctx, width, height) => {
 
 export const processFilesClientSide = async (filesQueue, options, onProgress) => {
   const zip = new JSZip();
-  const { baseName, startNumber, optCrop, optTrimOnly, optResize } = options;
+  const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize } = options;
 
   let processedCount = 0;
 
@@ -163,20 +163,28 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
           }
       }
       
-      // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) ---
-      // Sprawdzamy czy po ewentualnym dodaniu marginesu (+10px) obraz nie przekroczy limitu.
+      // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) + optAddMargin ---
       // Limit: 3000px szerokości, 3600px wysokości.
       const MAX_W = 3000;
       const MAX_H = 3600;
       
-      // Ile dodamy? Tylko jeśli optCrop aktywny i NIE optTrimOnly (bo optTrimOnly wyłącza margines)
-      const marginAdd = (optCrop && !optTrimOnly && shouldAddMargin) ? 10 : 0;
+      // Decyzja o marginesie:
+      // 1. "Warunkowy" (ze starej opcji Kadrowanie) - tylko jeśli optCrop i nie optTrimOnly i shouldAddMargin
+      const conditionalMargin = (optCrop && !optTrimOnly && shouldAddMargin);
+      // 2. "Wymuszony" (nowa opcja) - zawsze jeśli optAddMargin
+      const forcedMargin = optAddMargin;
+      
+      // Czy w ogóle dodajemy margines?
+      const willAddMargin = conditionalMargin || forcedMargin;
+      
+      // Ile dodamy? (10px jeśli tak, 0 jeśli nie)
+      const marginAdd = willAddMargin ? 10 : 0;
       
       // Sprawdź obecne wymiary
       let currentW = canvas.width;
       let currentH = canvas.height;
       
-      // Jeśli (current + margin) przekracza limit, musimy skalować
+      // Jeśli (current + margin) przekracza limit, musimy skalować TREŚĆ
       if ( (currentW + marginAdd) > MAX_W || (currentH + marginAdd) > MAX_H ) {
           // Obliczamy maksymalne wymiary dla SAMEJ TREŚCI (bez marginesu)
           const maxContentW = MAX_W - marginAdd;
@@ -193,16 +201,15 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
           scaledCanvas.height = newH;
           const scaledCtx = scaledCanvas.getContext('2d');
           
-          // Wysoka jakość skalowania (step-down nie jest tu zaimplementowane, ale drawImage powinno dać radę)
+          // Wysoka jakość skalowania
           scaledCtx.drawImage(canvas, 0, 0, newW, newH);
           
           canvas = scaledCanvas;
           ctx = scaledCtx;
       }
 
-      
-      // Dodawanie marginesu (tylko jeśli optCrop i NIE optTrimOnly)
-      if (optCrop && !optTrimOnly && shouldAddMargin) {
+      // Dodawanie marginesu (jeśli trzeba)
+      if (willAddMargin) {
           const marginCanvas = document.createElement('canvas');
           marginCanvas.width = canvas.width + 10; // 5px z lewej + 5px z prawej
           marginCanvas.height = canvas.height + 10;
