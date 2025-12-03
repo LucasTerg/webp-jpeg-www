@@ -204,10 +204,35 @@ app.post(
           const wasTrimmed = currentWidth < width || currentHeight < height;
 
           // 3. Decyzja o marginesie
-          // Dodajemy margines, jeśli:
-          // - wykryto biały lub przezroczysty róg (hasBackgroundContext)
-          // - LUB operacja trim zmieniła wymiary (wasTrimmed)
           const shouldAddMargin = hasBackgroundContext || wasTrimmed;
+          const marginAdd = shouldAddMargin ? 10 : 0;
+
+          // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) ---
+          // Limit globalny: 3000x3600.
+          // Jeśli (current + margin) > Limit, skalujemy treść PRZED dodaniem marginesu.
+          const MAX_W = 3000;
+          const MAX_H = 3600;
+          
+          if ((currentWidth + marginAdd) > MAX_W || (currentHeight + marginAdd) > MAX_H) {
+             const maxContentW = MAX_W - marginAdd;
+             const maxContentH = MAX_H - marginAdd;
+             
+             // Resize (fit inside, withoutEnlargement)
+             // Używamy currentImage (który jest już 'sharp' instance)
+             currentImage = currentImage.resize({
+               width: maxContentW,
+               height: maxContentH,
+               fit: 'inside',
+               withoutEnlargement: true
+             });
+             
+             // Musimy zaktualizować currentWidth/Height dla dalszej logiki paddingu (min 500)
+             // Pobranie metadanych przerywa pipeline, więc zrobimy to bufferem
+             const resizedBuffer = await currentImage.toBuffer({ resolveWithObject: true });
+             currentImage = sharp(resizedBuffer.data);
+             currentWidth = resizedBuffer.info.width;
+             currentHeight = resizedBuffer.info.height;
+          }
 
           if (shouldAddMargin) {
             currentImage = currentImage.extend({
@@ -219,21 +244,6 @@ app.post(
             });
             currentWidth += 10;
             currentHeight += 10;
-          }
-
-          // Zachowujemy logikę skalowania w dół dla bardzo dużych zdjęć
-          if (currentWidth > 3000 || currentHeight > 3600) {
-             // Logika resize dla dużych zdjęć...
-             // Tutaj uproszczona, aby nie komplikować przeliczeń
-             currentImage = currentImage.resize({
-               width: currentWidth > 3000 ? 3000 : undefined,
-               height: currentHeight > 3600 ? 3600 : undefined,
-               fit: 'inside'
-             });
-             // Po resize wymiary się zmienią, ale dla dalszej logiki min 500px
-             // zakładamy, że nadal są > 500px (bo startujemy z >3000).
-             // Dla precyzji w idealnym świecie pobralibyśmy nowe metadata,
-             // ale tu zostawiamy to, bo targetWidth/Height poniżej zadba o "min 500".
           }
 
           // 4. Dopełnij do 500px jeśli mniej
@@ -392,7 +402,32 @@ app.post(
             const wasTrimmed = currentWidth < width || currentHeight < height;
 
             // 3. Margines
-            if (hasBackgroundContext || wasTrimmed) {
+            const shouldAddMargin = hasBackgroundContext || wasTrimmed;
+            const marginAdd = shouldAddMargin ? 10 : 0;
+
+            // --- LIMIT WYMIARÓW 3000x3600 (Tools) ---
+            const MAX_W = 3000;
+            const MAX_H = 3600;
+            
+            if ((currentWidth + marginAdd) > MAX_W || (currentHeight + marginAdd) > MAX_H) {
+               const maxContentW = MAX_W - marginAdd;
+               const maxContentH = MAX_H - marginAdd;
+               
+               image = image.resize({
+                 width: maxContentW,
+                 height: maxContentH,
+                 fit: 'inside',
+                 withoutEnlargement: true
+               });
+               
+               // Aktualizacja metadanych
+               const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
+               image = sharp(resizedBuffer.data);
+               currentWidth = resizedBuffer.info.width;
+               currentHeight = resizedBuffer.info.height;
+            }
+
+            if (shouldAddMargin) {
               image = image.extend({
                 top: 5, bottom: 5, left: 5, right: 5,
                 background: '#ffffff'

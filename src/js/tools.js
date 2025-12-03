@@ -81,12 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SANITYZACJA I SCHOWEK ---
     if(baseNameInput) {
         baseNameInput.addEventListener('mouseenter', async () => {
-            if (baseNameInput.value.trim() !== '') return;
+            // if (baseNameInput.value.trim() !== '') return; // Usunięte na prośbę, aby umożliwić aktualizację
             try {
                 const text = await navigator.clipboard.readText();
                 if (text) {
                     const cleanText = sanitizeName(text);
-                    if (cleanText) {
+                    if (cleanText && baseNameInput.value !== cleanText) {
                         baseNameInput.value = cleanText;
                         baseNameInput.classList.add('flash-input');
                         setTimeout(() => baseNameInput.classList.remove('flash-input'), 500);

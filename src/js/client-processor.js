@@ -160,6 +160,44 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
               ctx = trimmedCtx;
           }
       }
+
+      // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) ---
+      // Sprawdzamy czy po ewentualnym dodaniu marginesu (+10px) obraz nie przekroczy limitu.
+      // Limit: 3000px szerokości, 3600px wysokości.
+      const MAX_W = 3000;
+      const MAX_H = 3600;
+      
+      // Ile dodamy?
+      const marginAdd = (optCrop && shouldAddMargin) ? 10 : 0;
+      
+      // Sprawdź obecne wymiary
+      let currentW = canvas.width;
+      let currentH = canvas.height;
+      
+      // Jeśli (current + margin) przekracza limit, musimy skalować
+      if ( (currentW + marginAdd) > MAX_W || (currentH + marginAdd) > MAX_H ) {
+          // Obliczamy maksymalne wymiary dla SAMEJ TREŚCI (bez marginesu)
+          const maxContentW = MAX_W - marginAdd;
+          const maxContentH = MAX_H - marginAdd;
+          
+          // Skalowanie zachowujące proporcje (fit inside)
+          const scale = Math.min(maxContentW / currentW, maxContentH / currentH);
+          
+          const newW = Math.floor(currentW * scale);
+          const newH = Math.floor(currentH * scale);
+          
+          const scaledCanvas = document.createElement('canvas');
+          scaledCanvas.width = newW;
+          scaledCanvas.height = newH;
+          const scaledCtx = scaledCanvas.getContext('2d');
+          
+          // Wysoka jakość skalowania (step-down nie jest tu zaimplementowane, ale drawImage powinno dać radę)
+          scaledCtx.drawImage(canvas, 0, 0, newW, newH);
+          
+          canvas = scaledCanvas;
+          ctx = scaledCtx;
+      }
+
       
       // Dodawanie marginesu (jeśli flaga aktywna)
       if (optCrop && shouldAddMargin) {
