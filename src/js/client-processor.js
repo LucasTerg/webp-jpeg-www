@@ -92,7 +92,6 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
     const fileItem = filesQueue[i];
     const file = fileItem.file;
     
-    // Raportowanie postępu
     if (onProgress) onProgress(`Przetwarzanie: ${file.name} (${i + 1}/${filesQueue.length})`);
 
     try {
@@ -105,11 +104,11 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
       // Rysujemy oryginał
       ctx.drawImage(img, 0, 0);
 
-      // Logika flagi "Should Add Margin" (z serwera: białe rogi lub przezroczystość)
-      // Sprawdzamy 4 rogi oryginału
-      let shouldAddMargin = false;
-      
-      // Sprawdzamy warunki do kadrowania jeśli którakolwiek opcja jest włączona
+      // Zmienne pomocnicze
+      let hasBackgroundContext = false;
+      let wasTrimmed = false;
+
+      // 1. DETEKCJA TŁA (dla optCrop - tryb Auto)
       if (optCrop || optTrimOnly) {
           const corners = [
             { x: 0, y: 0 },
@@ -126,70 +125,56 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
              const b = pixels[idx+2];
              const a = pixels[idx+3];
              
-             // Biały lub Przezroczysty
+             // Biały (>230) lub Przezroczysty (<255)
              if ((r > 230 && g > 230 && b > 230) || a < 255) {
-                 shouldAddMargin = true;
+                 hasBackgroundContext = true;
                  break;
              }
           }
+      }
 
-          // Logika TRIM
+      // 2. KADROWANIE (Trim)
+      if (optCrop || optTrimOnly) {
           const bounds = getTrimmedBounds(ctx, canvas.width, canvas.height);
-          
           if (bounds) {
-              // Sprawdź czy wymiary się zmieniły (czy coś przycięto)
-              // Uwaga: bounds może być null jeśli obraz pusty.
-              // Sprawdzamy różnicę wymiarów
               if (bounds.width < canvas.width || bounds.height < canvas.height) {
-                  shouldAddMargin = true;
+                  wasTrimmed = true;
               }
 
-              // Tworzymy nowy canvas dla przyciętego obrazu
               const trimmedCanvas = document.createElement('canvas');
               trimmedCanvas.width = bounds.width;
               trimmedCanvas.height = bounds.height;
               const trimmedCtx = trimmedCanvas.getContext('2d');
               
-              // Kopiujemy wycinek
               trimmedCtx.drawImage(
                   canvas, 
                   bounds.x, bounds.y, bounds.width, bounds.height, 
                   0, 0, bounds.width, bounds.height
               );
               
-              // Podmieniamy canvas na przycięty
               canvas = trimmedCanvas;
               ctx = trimmedCtx;
           }
       }
       
-      // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) + optAddMargin ---
-      // Limit: 3000px szerokości, 3600px wysokości.
+      // 3. DECYZJA O MARGINESIE
+      // Auto: (optCrop && !optTrimOnly) AND (hasBackground OR wasTrimmed)
+      const autoMargin = (optCrop && !optTrimOnly && (hasBackgroundContext || wasTrimmed));
+      const forceMargin = optAddMargin;
+      
+      const willAddMargin = autoMargin || forceMargin;
+      const marginTotal = willAddMargin ? 10 : 0; // 5px + 5px
+      
+      // 4. SKALOWANIE DO LIMITU (3000x3600)
       const MAX_W = 3000;
       const MAX_H = 3600;
+      const maxContentW = MAX_W - marginTotal;
+      const maxContentH = MAX_H - marginTotal;
       
-      // Decyzja o marginesie:
-      // 1. "Warunkowy" (ze starej opcji Kadrowanie) - tylko jeśli optCrop i nie optTrimOnly i shouldAddMargin
-      const conditionalMargin = (optCrop && !optTrimOnly && shouldAddMargin);
-      // 2. "Wymuszony" (nowa opcja) - zawsze jeśli optAddMargin
-      const forcedMargin = optAddMargin;
-      
-      // Czy w ogóle dodajemy margines?
-      const willAddMargin = conditionalMargin || forcedMargin;
-      
-      // Ile dodamy? (10px jeśli tak, 0 jeśli nie)
-      const marginAdd = willAddMargin ? 10 : 0;
-      
-      // Sprawdź obecne wymiary
       let currentW = canvas.width;
       let currentH = canvas.height;
-      
-      // Jeśli (current + margin) przekracza limit, musimy skalować TREŚĆ
-      if ( (currentW + marginAdd) > MAX_W || (currentH + marginAdd) > MAX_H ) {
-          // Obliczamy maksymalne wymiary dla SAMEJ TREŚCI (bez marginesu)
-          const maxContentW = MAX_W - marginAdd;
-          const maxContentH = MAX_H - marginAdd;
-          
+
+      if (currentW > maxContentW || currentH > maxContentH) {
           // Skalowanie zachowujące proporcje (fit inside)
           const scale = Math.min(maxContentW / currentW, maxContentH / currentH);
           
@@ -201,48 +186,49 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
           scaledCanvas.height = newH;
           const scaledCtx = scaledCanvas.getContext('2d');
           
-          // Wysoka jakość skalowania
+          // Wysoka jakość skalowania (browser default is usually ok for downscale)
           scaledCtx.drawImage(canvas, 0, 0, newW, newH);
           
           canvas = scaledCanvas;
           ctx = scaledCtx;
+          currentW = newW;
+          currentH = newH;
       }
 
-      // Dodawanie marginesu (jeśli trzeba)
+      // 5. DODANIE MARGINESU
       if (willAddMargin) {
           const marginCanvas = document.createElement('canvas');
-          marginCanvas.width = canvas.width + 10; // 5px z lewej + 5px z prawej
-          marginCanvas.height = canvas.height + 10;
+          marginCanvas.width = currentW + 10;
+          marginCanvas.height = currentH + 10;
           const marginCtx = marginCanvas.getContext('2d');
           
-          // Tło białe
           marginCtx.fillStyle = '#ffffff';
           marginCtx.fillRect(0, 0, marginCanvas.width, marginCanvas.height);
           
-          // Rysujemy obraz centralnie
           marginCtx.drawImage(canvas, 5, 5);
           
           canvas = marginCanvas;
           ctx = marginCtx;
+          currentW += 10;
+          currentH += 10;
       }
-      // Padding do 500px (optResize)
+
+      // 6. DOPEŁNIENIE DO 500px (Padding)
       if (optResize) {
-          const targetW = Math.max(canvas.width, 500);
-          const targetH = Math.max(canvas.height, 500);
+          const targetW = Math.max(currentW, 500);
+          const targetH = Math.max(currentH, 500);
           
-          if (canvas.width < targetW || canvas.height < targetH) {
+          if (currentW < targetW || currentH < targetH) {
               const paddedCanvas = document.createElement('canvas');
               paddedCanvas.width = targetW;
               paddedCanvas.height = targetH;
               const paddedCtx = paddedCanvas.getContext('2d');
               
-              // Tło białe
               paddedCtx.fillStyle = '#ffffff';
               paddedCtx.fillRect(0, 0, targetW, targetH);
               
-              // Centrowanie
-              const dx = Math.floor((targetW - canvas.width) / 2);
-              const dy = Math.floor((targetH - canvas.height) / 2);
+              const dx = Math.floor((targetW - currentW) / 2);
+              const dy = Math.floor((targetH - currentH) / 2);
               
               paddedCtx.drawImage(canvas, dx, dy);
               
@@ -251,7 +237,7 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
           }
       }
 
-      // Finalne spłaszczenie na białe tło (bo JPEG nie ma przezroczystości)
+      // Finalne spłaszczenie na białe tło
       const finalCanvas = document.createElement('canvas');
       finalCanvas.width = canvas.width;
       finalCanvas.height = canvas.height;
@@ -260,10 +246,8 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
       finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
       finalCtx.drawImage(canvas, 0, 0);
 
-      // Konwersja do Blob (JPEG)
-      const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/jpeg', 0.99));
+      const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/jpeg', 0.95));
       
-      // Dodanie do ZIP
       const fileName = `${baseName}-${startNumber + i}.jpg`;
       zip.file(fileName, blob);
       

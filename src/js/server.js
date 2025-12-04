@@ -218,12 +218,11 @@ app.post(
         const outputPath = path.join(outputDir, `${newName}-${index + 1}.jpg`);
 
         try {
-          const inputImage = sharp(inputPath);
-          const metadata = await inputImage.metadata();
-          const { width, height } = metadata;
+          let image = sharp(inputPath);
+          const metadata = await image.metadata();
+          let { width, height } = metadata;
 
-          // 1. Sprawdź 4 rogi pod kątem białego tła LUB przezroczystości
-          // Definiujemy punkty do sprawdzenia: TL, TR, BL, BR
+          // 1. DETEKCJA TŁA (zawsze aktywna dla głównego endpointu)
           const corners = [
             { left: 0, top: 0 },
             { left: width - 1, top: 0 },
@@ -232,91 +231,65 @@ app.post(
           ];
 
           let hasBackgroundContext = false;
-          // Sprawdzamy każdy róg
           for (const corner of corners) {
-            const pixelBuffer = await inputImage
+            const pixelBuffer = await image
               .clone()
-              .extract({
-                left: corner.left,
-                top: corner.top,
-                width: 1,
-                height: 1,
-              })
+              .extract({ left: corner.left, top: corner.top, width: 1, height: 1 })
               .toBuffer();
-
-            const r = pixelBuffer[0];
-            const g = pixelBuffer[1];
-            const b = pixelBuffer[2];
-            // Sprawdź kanał alfa, jeśli istnieje (długość bufora 4 dla RGBA)
             const a = pixelBuffer.length >= 4 ? pixelBuffer[3] : 255;
-
-            // Biały: RGB > 230
-            const isWhite = r > 230 && g > 230 && b > 230;
-            // Przezroczysty: Alpha < 255 (zakładamy, że jeśli jest jakakolwiek przezroczystość, to jest to tło)
-            const isTransparent = a < 255;
-
-            if (isWhite || isTransparent) {
+            if ((pixelBuffer[0] > 230 && pixelBuffer[1] > 230 && pixelBuffer[2] > 230) || a < 255) {
               hasBackgroundContext = true;
-              break; // Wystarczy jeden taki róg
+              break;
             }
           }
 
-          // 2. Kadruj (trim) i sprawdź czy wymiary się zmieniły
-          const trimmedData = await inputImage
+          // 2. KADROWANIE (Trim) - Zawsze aktywne
+          const trimmedData = await image
             .clone()
             .trim()
             .toBuffer({ resolveWithObject: true });
 
-          let currentImage = sharp(trimmedData.data);
+          image = sharp(trimmedData.data);
           let currentWidth = trimmedData.info.width;
           let currentHeight = trimmedData.info.height;
-
           const wasTrimmed = currentWidth < width || currentHeight < height;
 
-          // 3. Decyzja o marginesie
+          // 3. DECYZJA O MARGINESIE
+          // W głównym endpoincie (bez opcji) zachowujemy się jak "Smart":
+          // Jeśli było tło (wykryte w rogach) LUB nastąpiło przycięcie -> dodajemy margines.
           const shouldAddMargin = hasBackgroundContext || wasTrimmed;
-          const marginAdd = shouldAddMargin ? 10 : 0;
+          const marginTotal = shouldAddMargin ? 10 : 0;
 
-          // --- NOWA LOGIKA: Ograniczenie wymiarów (3000x3600) ---
-          // Limit globalny: 3000x3600.
-          // Jeśli (current + margin) > Limit, skalujemy treść PRZED dodaniem marginesu.
+          // 4. SKALOWANIE DO LIMITU (3000x3600)
           const MAX_W = 3000;
           const MAX_H = 3600;
-          
-          if ((currentWidth + marginAdd) > MAX_W || (currentHeight + marginAdd) > MAX_H) {
-             const maxContentW = MAX_W - marginAdd;
-             const maxContentH = MAX_H - marginAdd;
-             
-             // Resize (fit inside, withoutEnlargement)
-             // Używamy currentImage (który jest już 'sharp' instance)
-             currentImage = currentImage.resize({
-               width: maxContentW,
-               height: maxContentH,
-               fit: 'inside',
-               withoutEnlargement: true
-             });
-             
-             // Musimy zaktualizować currentWidth/Height dla dalszej logiki paddingu (min 500)
-             // Pobranie metadanych przerywa pipeline, więc zrobimy to bufferem
-             const resizedBuffer = await currentImage.toBuffer({ resolveWithObject: true });
-             currentImage = sharp(resizedBuffer.data);
-             currentWidth = resizedBuffer.info.width;
-             currentHeight = resizedBuffer.info.height;
+          const maxContentW = MAX_W - marginTotal;
+          const maxContentH = MAX_H - marginTotal;
+
+          if (currentWidth > maxContentW || currentHeight > maxContentH) {
+            image = image.resize({
+              width: maxContentW,
+              height: maxContentH,
+              fit: 'inside',
+              withoutEnlargement: true
+            });
+            const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
+            image = sharp(resizedBuffer.data);
+            currentWidth = resizedBuffer.info.width;
+            currentHeight = resizedBuffer.info.height;
           }
 
+          // 5. DODANIE MARGINESU
           if (shouldAddMargin) {
-            currentImage = currentImage.extend({
-              top: 5,
-              bottom: 5,
-              left: 5,
-              right: 5,
-              background: '#ffffff',
+            image = image.extend({
+              top: 5, bottom: 5, left: 5, right: 5,
+              background: '#ffffff'
             });
             currentWidth += 10;
             currentHeight += 10;
           }
 
-          // 4. Dopełnij do 500px jeśli mniej (BEZ SKALOWANIA - padding)
+          // 6. DOPEŁNIENIE DO 500px (Padding)
           const targetWidth = Math.max(currentWidth, 500);
           const targetHeight = Math.max(currentHeight, 500);
 
@@ -326,25 +299,23 @@ app.post(
             const left = Math.floor(xPad / 2);
             const top = Math.floor(yPad / 2);
 
-            currentImage = currentImage.extend({
+            image = image.extend({
               top: top,
               bottom: yPad - top,
               left: left,
               right: xPad - left,
-              background: '#ffffff',
+              background: '#ffffff'
             });
           }
 
-          // 5. Zapisz (z optymalizacją)
-          await saveOptimizedImage(currentImage, outputPath);
+          // 7. Zapis
+          await saveOptimizedImage(image, outputPath);
 
           console.log(`Zapisano plik: ${outputPath}`);
           await fsPromises.unlink(inputPath); 
         } catch (err) {
           console.error(`Błąd przetwarzania pliku ${file.originalname}:`, err);
-          try {
-            if (fs.existsSync(inputPath)) await fsPromises.unlink(inputPath);
-          } catch (e) {}
+          try { if (fs.existsSync(inputPath)) await fsPromises.unlink(inputPath); } catch (e) {}
         }
       });
 // ----------------------------------------------------------------
@@ -431,7 +402,6 @@ app.post(
 
       const processingPromises = req.files.map(async (file, index) => {
         const inputPath = file.path;
-        // Logika numeracji: startNumber + index (może być ujemna)
         const currentNum = startNumber + index;
         const outputPath = path.join(outputDir, `${newName}-${currentNum}.jpg`);
 
@@ -440,118 +410,95 @@ app.post(
           const metadata = await image.metadata();
           let { width, height } = metadata;
 
-          // --- LOGIKA KADROWANIA I MARGINESU (jeśli zaznaczona) ---
+          // Zmienne pomocnicze do decyzji
+          let hasBackgroundContext = false;
+          let wasTrimmed = false;
+
+          // 1. DETEKCJA TŁA (dla optCrop)
+          // Sprawdzamy to ZANIM zrobimy trim, żeby wiedzieć czy obraz miał tło.
           if (optCrop || optTrimOnly) {
-             // 1. Sprawdź 4 rogi
-            const corners = [
+             const corners = [
               { left: 0, top: 0 },
               { left: width - 1, top: 0 },
               { left: 0, top: height - 1 },
               { left: width - 1, top: height - 1 },
             ];
-
-            let hasBackgroundContext = false;
             for (const corner of corners) {
               const pixelBuffer = await image
                 .clone()
                 .extract({ left: corner.left, top: corner.top, width: 1, height: 1 })
                 .toBuffer();
               const a = pixelBuffer.length >= 4 ? pixelBuffer[3] : 255;
-              const isWhite = pixelBuffer[0] > 230 && pixelBuffer[1] > 230 && pixelBuffer[2] > 230;
-              if (isWhite || a < 255) {
+              if ((pixelBuffer[0] > 230 && pixelBuffer[1] > 230 && pixelBuffer[2] > 230) || a < 255) {
                 hasBackgroundContext = true;
                 break;
               }
             }
+          }
 
-            // 2. Trim
-            const trimmedData = await image
+          // 2. KADROWANIE (Trim)
+          let currentWidth = width;
+          let currentHeight = height;
+
+          if (optCrop || optTrimOnly) {
+             const trimmedData = await image
               .clone()
               .trim()
               .toBuffer({ resolveWithObject: true });
             
             image = sharp(trimmedData.data);
-            let currentWidth = trimmedData.info.width;
-            let currentHeight = trimmedData.info.height;
-            const wasTrimmed = currentWidth < width || currentHeight < height;
-
-            // 3. Decyzja o marginesie (WARUNKOWYM - ze starej logiki)
-            const shouldAddMargin = hasBackgroundContext || wasTrimmed;
-            // Zachowujemy informację, że stary algorytm "chciałby" dodać margines
-            // ale finalne dodanie nastąpi w nowym bloku poniżej, który łączy oba warunki.
-            // Tutaj tylko aktualizujemy 'image' po trimie.
-            
-            // UWAGA: Wcześniejsza logika dodawała margines OD RAZU tutaj.
-            // Teraz musimy to przenieść niżej, aby obsłużyć też optAddMargin
-            
-            // Zapiszmy stan "conditional"
-            image.metadata().then(m => {
-                width = m.width;
-                height = m.height;
-            });
-            // Hack: W tym miejscu 'image' to już po trimie. 
-            // Zmienne currentWidth/Height mają wymiary po trimie.
-            
-            // Przekazujemy flagę dalej
-            var effectiveConditionalMargin = (optCrop && !optTrimOnly && shouldAddMargin);
-          } else {
-             var effectiveConditionalMargin = false;
-             // Jeśli nie było crop, width/height są oryginalne
-             var currentWidth = width;
-             var currentHeight = height;
+            currentWidth = trimmedData.info.width;
+            currentHeight = trimmedData.info.height;
+            wasTrimmed = currentWidth < width || currentHeight < height;
           }
 
-          // --- NOWA ZINTEGROWANA LOGIKA MARGINESÓW I LIMITÓW ---
-          const forcedMargin = optAddMargin;
-          const willAddMargin = effectiveConditionalMargin || forcedMargin;
-          const marginAdd = willAddMargin ? 10 : 0;
+          // 3. DECYZJA O MARGINESIE
+          // - Jeśli optAddMargin jest włączone (wymuszone) -> TAK.
+          // - Jeśli optCrop (tryb auto) I (znaleziono tło LUB przycięto) I NIE jest to samo kadrowanie (optTrimOnly) -> TAK.
+          
+          const autoMargin = (optCrop && !optTrimOnly && (hasBackgroundContext || wasTrimmed));
+          const forceMargin = optAddMargin;
+          
+          const willAddMargin = autoMargin || forceMargin;
+          const marginTotal = willAddMargin ? 10 : 0; // 5 + 5
 
-          // --- LIMIT WYMIARÓW 3000x3600 (Tools) ---
+          // 4. SKALOWANIE DO LIMITU (3000x3600)
           const MAX_W = 3000;
           const MAX_H = 3600;
-          
-          // Jeśli nie wchodziliśmy w blok if(optCrop...), musimy upewnić się że mamy aktualne wymiary
-          // (sharp chain jest lazy, ale currentWidth/Height powinny być ok)
-          
-          if ((currentWidth + marginAdd) > MAX_W || (currentHeight + marginAdd) > MAX_H) {
-             const maxContentW = MAX_W - marginAdd;
-             const maxContentH = MAX_H - marginAdd;
-             
-             image = image.resize({
-               width: maxContentW,
-               height: maxContentH,
-               fit: 'inside',
-               withoutEnlargement: true
-             });
-             
-             // Aktualizacja metadanych
-             const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
-             image = sharp(resizedBuffer.data);
-             currentWidth = resizedBuffer.info.width;
-             currentHeight = resizedBuffer.info.height;
+          const maxContentW = MAX_W - marginTotal;
+          const maxContentH = MAX_H - marginTotal;
+
+          if (currentWidth > maxContentW || currentHeight > maxContentH) {
+            image = image.resize({
+              width: maxContentW,
+              height: maxContentH,
+              fit: 'inside',
+              withoutEnlargement: true
+            });
+            const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
+            image = sharp(resizedBuffer.data);
+            currentWidth = resizedBuffer.info.width;
+            currentHeight = resizedBuffer.info.height;
           }
 
+          // 5. DODANIE MARGINESU
           if (willAddMargin) {
-            image = image.extend({
+             image = image.extend({
               top: 5, bottom: 5, left: 5, right: 5,
               background: '#ffffff'
             });
+            currentWidth += 10;
+            currentHeight += 10;
           }
 
-          // Pobieramy zaktualizowane metadane po ew. kadrowaniu, aby resize działał poprawnie
-          const bufferAfterCrop = await image.toBuffer({ resolveWithObject: true });
-          image = sharp(bufferAfterCrop.data);
-          width = bufferAfterCrop.info.width;
-          height = bufferAfterCrop.info.height;
-
-          // --- LOGIKA RESIZE (Dopełnienie do 500px - BEZ SKALOWANIA) ---
+          // 6. DOPEŁNIENIE DO 500px (Padding)
           if (optResize) {
-             const targetWidth = Math.max(width, 500);
-             const targetHeight = Math.max(height, 500);
+             const targetWidth = Math.max(currentWidth, 500);
+             const targetHeight = Math.max(currentHeight, 500);
              
-             if (width < targetWidth || height < targetHeight) {
-               const xPad = targetWidth - width;
-               const yPad = targetHeight - height;
+             if (currentWidth < targetWidth || currentHeight < targetHeight) {
+               const xPad = targetWidth - currentWidth;
+               const yPad = targetHeight - currentHeight;
                const left = Math.floor(xPad / 2);
                const top = Math.floor(yPad / 2);
                
@@ -565,7 +512,7 @@ app.post(
              }
           }
 
-          // Zapis (z optymalizacją)
+          // 7. Zapis
           await saveOptimizedImage(image, outputPath);
 
           await fsPromises.unlink(inputPath);
