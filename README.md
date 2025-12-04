@@ -14,11 +14,11 @@ Wszechstronne narzędzie do przetwarzania obrazów, stworzone z myślą o szybki
 -   **Inteligentne Kadrowanie i Dopełnianie:**
     -   Automatyczne **kadrowanie do zawartości**, usuwające jednolite obramowanie/tło.
     -   Wykrywanie białego lub przezroczystego tła – jeśli występuje, dodaje bezpieczny margines 5px.
-    -   Dopełnianie (padding) małych zdjęć do minimum 500px z zachowaniem proporcji.
+    -   Dopełnianie (białym tłem) małych zdjęć do minimum 500px.
 -   **Sanityzacja Nazw Plików:** Zaawansowana logika zamiany polskich znaków (np. ą -> a), usuwania znaków specjalnych i czyszczenia nazwy.
 -   **Przetwarzanie wsadowe:** Możliwość wrzucenia wielu plików naraz.
 -   **Tryb Hybrydowy:** Unikalna architektura pozwalająca na pracę w dwóch trybach:
-    -   **Lokalny (Client-Side):** Przetwarzanie odbywa się w całości w Twojej przeglądarce (Canvas API). Nie wymaga serwera, działa offline i na darmowych hostingach (np. GitHub Pages).
+    -   **Lokalny (Client-Side):** Przetwarzanie odbywa się w całości w Twojej przeglądarce. Nie wymaga serwera, działa offline i na darmowych hostingach (np. GitHub Pages).
     -   **Serwerowy (Node.js):** Wykorzystuje moc backendu i biblioteki `sharp` dla maksymalnej wydajności przy bardzo dużych plikach.
 -   **Pobieranie jako ZIP:** Wszystkie przetworzone pliki są pakowane w jedno archiwum gotowe do pobrania.
 
@@ -52,9 +52,11 @@ Zobacz jak to działa w praktyce:
 
 1.  Sklonuj repozytorium:
     ```bash
-    git clone [TWOJE_REPO_URL]
+    git clone https://github.com/LucasTerg/webp-jpeg-www.git
     cd webp-jpeg-www
     ```
+    [Pobierz repozytorium w pliku .zip](https://github.com/LucasTerg/webp-jpeg-www/archive/refs/heads/main.zip)
+
 2.  Zainstaluj zależności:
     ```bash
     npm install
