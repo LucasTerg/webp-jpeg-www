@@ -176,7 +176,7 @@ function renderList() {
     // Info Name with Hover Preview
     const span = document.createElement('span');
     span.className = 'file-info';
-    span.textContent = `[${index + 1}] ${item.file.name} (${(item.file.size / 1024).toFixed(1)} KB)`;
+    span.textContent = `[${index + 1}] ${item.file.name} (${(item.file.size / 1024).toFixed(1)} KB) (${item.width}x${item.height} px)`;
     
     // Hover Eventy
     span.addEventListener('mouseenter', (e) => showPreview(e, item.file));
@@ -233,16 +233,41 @@ function hidePreview() {
 }
 
 
-function addFiles(files) {
-  Array.from(files).forEach(file => {
+// Helper do ładowania obrazu i pobierania wymiarów
+const loadImageDimensions = (file) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(img.src); // Zwolnienie pamięci po załadowaniu
+      resolve({ width: img.width, height: img.height });
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+async function addFiles(files) { // <--- make it async
+  const filesToAdd = [];
+  for (const file of Array.from(files)) { // <--- use for...of for await
     if (file.type.startsWith('image/')) {
-      // Domyślnie zaznaczone (selected: true)
-      filesQueue.push({ file, id: Date.now() + Math.random(), selected: true });
-      log(`Dodano: ${file.name}`);
+      try {
+        const { width, height } = await loadImageDimensions(file); // <--- await dimensions
+        filesToAdd.push({
+          file,
+          id: Date.now() + Math.random(),
+          selected: true,
+          width, // <--- add width
+          height // <--- add height
+        });
+        log(`Dodano: ${file.name} (${width}x${height} px)`);
+      } catch (error) {
+        log(`BŁĄD podczas wczytywania wymiarów pliku ${file.name}: ${error.message}`);
+      }
     } else {
       log(`BŁĄD: ${file.name} nie jest obrazem.`);
     }
-  });
+  }
+  filesQueue.push(...filesToAdd); // <--- push all at once
   renderList();
 }
 
