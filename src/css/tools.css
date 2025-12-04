@@ -163,15 +163,16 @@ h1 span {
   padding: 5px;
   z-index: 1000;
   box-shadow: 0 0 15px rgba(0,0,0,0.8);
-  max-width: 300px;
-  max-height: 300px;
+  /* Usunięto max-width/max-height z kontenera, aby dopasował się do img */
   pointer-events: none; /* Żeby myszka nie wchodziła w interakcję */
 }
 
 .preview-tooltip img {
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
+  max-width: 300px;  /* Ograniczenie rozmiaru na obrazku */
+  max-height: 300px; /* Ograniczenie rozmiaru na obrazku */
+  width: auto;       /* Zachowanie proporcji */
+  height: auto;      /* Zachowanie proporcji */
+  display: block;    /* Usunięcie "ghost space" pod obrazkiem */
 }
 
 
