@@ -255,15 +255,16 @@ app.post(
           const wasTrimmed = currentWidth < width || currentHeight < height;
 
           // 3. DECYZJA O MARGINESIE
-          // W głównym endpoincie (bez opcji) zachowujemy się jak "Smart":
-          // Jeśli było tło (wykryte w rogach) LUB nastąpiło przycięcie -> dodajemy margines.
-          const shouldAddMargin = hasBackgroundContext || wasTrimmed;
-          const marginTotal = shouldAddMargin ? 10 : 0;
+          // W głównym endpoincie (Photo Cropper) wyłączamy ramkę 5px (zgodnie z wymogiem "jak Kadrowanie Prio").
+          // Zachowujemy Trim, Limit i Padding.
+          const shouldAddMargin = false; 
+          const marginTotal = 0;
 
           // 4. SKALOWANIE DO LIMITU (3000x3600)
           const MAX_W = 3000;
           const MAX_H = 3600;
-          const maxContentW = MAX_W - marginTotal;
+          // marginTotal tutaj wynosi 0, ale zostawiamy logikę dla spójności/czytelności
+          const maxContentW = MAX_W - marginTotal; 
           const maxContentH = MAX_H - marginTotal;
 
           if (currentWidth > maxContentW || currentHeight > maxContentH) {
@@ -279,7 +280,7 @@ app.post(
             currentHeight = resizedBuffer.info.height;
           }
 
-          // 5. DODANIE MARGINESU
+          // 5. DODANIE MARGINESU (Wyłączone przez shouldAddMargin = false)
           if (shouldAddMargin) {
             image = image.extend({
               top: 5, bottom: 5, left: 5, right: 5,
