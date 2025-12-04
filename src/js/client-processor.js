@@ -246,8 +246,43 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
       finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
       finalCtx.drawImage(canvas, 0, 0);
 
-      const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/jpeg', 0.95));
+      // --- INTELIGENTNA KOMPRESJA (Iteracyjna) ---
+      // Helper do konwersji canvas -> blob z zadaną jakością
+      const getBlob = (cvs, q) => new Promise(resolve => cvs.toBlob(blob => resolve(blob), 'image/jpeg', q));
+
+      const LIMIT_SMALL = 1.5 * 1024 * 1024; // 1.5 MB
+      const LIMIT_HARD = 3.0 * 1024 * 1024;  // 3.0 MB
+
+      let blob;
+
+      // 1. Próba: Jakość 0.99 (Max)
+      blob = await getBlob(finalCanvas, 0.99);
       
+      // Jeśli plik jest mały (<1.5MB), kończymy
+      if (blob.size > LIMIT_SMALL) {
+          
+          // 2. Próba: Jakość 0.96
+          let tempBlob = await getBlob(finalCanvas, 0.96);
+          if (tempBlob.size <= LIMIT_HARD) {
+              blob = tempBlob;
+          } else {
+              // 3. Próba: Jakość 0.92
+              tempBlob = await getBlob(finalCanvas, 0.92);
+              if (tempBlob.size <= LIMIT_HARD) {
+                  blob = tempBlob;
+              } else {
+                  // 4. Próba: Jakość 0.89
+                  tempBlob = await getBlob(finalCanvas, 0.89);
+                  if (tempBlob.size <= LIMIT_HARD) {
+                      blob = tempBlob;
+                  } else {
+                       // 5. Fallback: Jakość 0.85
+                       blob = await getBlob(finalCanvas, 0.85);
+                  }
+              }
+          }
+      }
+
       const fileName = `${baseName}-${startNumber + i}.jpg`;
       zip.file(fileName, blob);
       
