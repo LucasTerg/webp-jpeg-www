@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module" crossorigin src="./tools.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
-    <link rel="stylesheet" crossorigin href="./assets/tools-CKHDptvR.css">
+    <link rel="stylesheet" crossorigin href="./assets/tools-DyPoOknM.css">
   </head>
   <body>
     <div class="hacker-container">
@@ -53,15 +53,28 @@
           <small style="opacity: 0.7">Możesz wpisać liczby ujemne (np. -2).</small>
         </div>
 
-        <div class="control-group">
+        <!-- TRYB GŁÓWNY -->
+        <div class="control-group section-divider">
+          <div class="section-label">TRYB PRZETWARZANIA (Główny):</div>
+          
           <label class="checkbox-label">
-            <input type="checkbox" id="opt-crop" />
-            [KADROWANIE + MARGINES 5PX]
+            <input type="radio" name="main-mode" id="mode-smart" value="smart" />
+            KADROWANIE SMART (Auto)
           </label>
           <label class="checkbox-label">
-            <input type="checkbox" id="opt-trim-only" checked />
-            [SAMO KADROWANIE Prio]
+            <input type="radio" name="main-mode" id="mode-simple" value="simple" checked />
+            KADROWANIE PROSTE (Tylko Trim)
           </label>
+          <label class="checkbox-label">
+            <input type="radio" name="main-mode" id="mode-none" value="none" />
+            BRAK KADROWANIA (Tylko konwersja)
+          </label>
+        </div>
+
+        <!-- POST PROCESS -->
+        <div class="control-group section-divider">
+          <div class="section-label">OPERACJE KOŃCOWE (Post-process):</div>
+          
           <label class="checkbox-label">
             <input type="checkbox" id="opt-add-margin" />
             [DODAJ RAMKĘ 5PX]
@@ -69,6 +82,14 @@
           <label class="checkbox-label">
             <input type="checkbox" id="opt-resize" />
             [DOPEŁNIJ DO 500PX]
+          </label>
+        </div>
+
+        <!-- ZAPIS -->
+        <div class="control-group section-divider">
+           <label class="checkbox-label" style="color: var(--accent-color); font-weight: bold;">
+            <input type="checkbox" id="opt-overwrite" checked />
+            NADPISZ ISTNIEJĄCE PLIKI
           </label>
         </div>
 
