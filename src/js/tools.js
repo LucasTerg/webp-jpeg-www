@@ -437,6 +437,38 @@ async function executeLogic() {
     return;
   }
 
-  // SERVER MODE (Dla kompatybilności, ale w Electronie nie używany)
-  // ... (pomijam kod serwera webowego, bo w Electronie go nie używamy)
+  // SERVER MODE
+  const formData = new FormData();
+  selectedFiles.forEach((item) => {
+    formData.append('images', item.file);
+  });
+  formData.append('newName', baseName);
+  formData.append('startNumber', startNum);
+  formData.append('optCrop', optCropValue);
+  formData.append('optTrimOnly', optTrimOnlyValue);
+  formData.append('optAddMargin', optAddMargin.checked);
+  formData.append('optResize', optResize.checked);
+
+  try {
+    const API_URL = 'http://localhost:3000/upload-tools';
+    const response = await fetch(API_URL, { method: 'POST', body: formData });
+
+    if (response.ok) {
+      log('SUKCES: Pliki przetworzone.');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'processed.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      log('Rozpoczęto pobieranie archiwum.');
+    } else {
+      const errText = await response.text();
+      log(`BŁĄD SERWERA: ${errText}`);
+    }
+  } catch (error) {
+    log(`BŁĄD SIECI: ${error.message}`);
+  }
 }
