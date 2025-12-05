@@ -82,8 +82,8 @@ const getTrimmedBounds = (ctx, width, height) => {
   return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 };
 };
 
-export const processFilesClientSide = async (filesQueue, options, onProgress) => {
-  const zip = new JSZip();
+export const processFilesClientSide = async (filesQueue, options, onProgress, onFileProcessed) => {
+  const zip = onFileProcessed ? null : new JSZip();
   const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize } = options;
 
   let processedCount = 0;
@@ -284,7 +284,12 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
       }
 
       const fileName = `${baseName}-${startNumber + i}.jpg`;
-      zip.file(fileName, blob);
+      
+      if (onFileProcessed) {
+          await onFileProcessed(blob, fileName, file);
+      } else {
+          zip.file(fileName, blob);
+      }
       
       processedCount++;
 
@@ -294,7 +299,9 @@ export const processFilesClientSide = async (filesQueue, options, onProgress) =>
     }
   }
 
-  if (onProgress) onProgress('Pakowanie ZIP...');
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
-  return zipBlob;
+  if (!onFileProcessed) {
+      if (onProgress) onProgress('Pakowanie ZIP...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      return zipBlob;
+  }
 };

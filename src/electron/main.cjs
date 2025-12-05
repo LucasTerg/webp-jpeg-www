@@ -46,18 +46,61 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// Helper unikalnej nazwy (taki sam jak w workerze)
+const getUniquePath = async (filePath) => {
+    let currentPath = filePath;
+    let counter = 1;
+    const ext = path.extname(filePath);
+    const base = path.basename(filePath, ext);
+    const dir = path.dirname(filePath);
+
+    while (true) {
+        try {
+            await fsPromises.access(currentPath);
+            currentPath = path.join(dir, `${base}-v${counter}${ext}`);
+            counter++;
+        } catch (e) {
+            return currentPath;
+        }
+    }
+};
+
+// --- SAVE FILE (DLA FALLBACK MODE) ---
+ipcMain.handle('save-file', async (event, sourceFilePath, fileName, buffer, overwrite) => {
+    try {
+        const sourceDir = path.dirname(sourceFilePath);
+        const outputDir = path.join(sourceDir, '_terg');
+        
+        await fsPromises.mkdir(outputDir, { recursive: true });
+        
+        let outputPath = path.join(outputDir, fileName);
+        
+        if (!overwrite) {
+            outputPath = await getUniquePath(outputPath);
+        }
+        
+        await fsPromises.writeFile(outputPath, Buffer.from(buffer));
+        
+        return { success: true, path: outputPath };
+    } catch (error) {
+        console.error('Save file error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
 ipcMain.handle('process-images', async (event, filePaths, options) => {
     const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize } = options;
     
     if (!filePaths || filePaths.length === 0) return { success: false, message: 'Brak plików.' };
 
     const sourceDir = path.dirname(filePaths[0]);
-    const outputDir = path.join(sourceDir, '_terg'); // Stały podfolder _terg
+    const outputDir = path.join(sourceDir, '_terg'); 
 
     // --- UTILITY PROCESS (Worker) ---
     return new Promise((resolve, reject) => {
         const workerPath = path.join(__dirname, 'worker.cjs');
         
+        // Uruchamiamy workera jako Utility Process
         const worker = utilityProcess.fork(workerPath);
 
         worker.postMessage({
@@ -65,20 +108,17 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
             payload: {
                 filePaths,
                 options,
-                outputDir // Przekazujemy ten stały outputDir
+                outputDir
             }
         });
 
-        // Nasłuchujemy wiadomości od workera
         worker.on('message', (msg) => {
             if (msg.type === 'log') {
-                // Przekazujemy logi do okna renderera
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     mainWindow.webContents.send('log-message', msg.message);
                 }
             } else if (msg.type === 'done') {
-                // Koniec pracy
-                worker.kill(); // Zabijamy proces
+                worker.kill();
                 if (msg.success) {
                     resolve({ success: true, path: msg.path });
                 } else {
@@ -90,7 +130,7 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
         worker.on('exit', (code) => {
             if (code !== 0 && code !== null) {
                 console.error(`Worker exited with code ${code}`);
-                resolve({ success: false, message: `Proces przetwarzania zakończył się błędem (kod ${code}).` });
+                resolve({ success: false, message: `Worker error exit code: ${code}` });
             }
         });
     });

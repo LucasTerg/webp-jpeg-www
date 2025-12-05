@@ -329,6 +329,34 @@ window.removeFile = (index) => {
   renderList();
 };
 
+// Funkcja Fallback (Canvas w Electronie)
+async function runFallbackInElectron(filesQueue, options) {
+    log('Uruchamianie trybu awaryjnego (Canvas API)...');
+    
+    try {
+        const { processFilesClientSide } = await import('./client-processor.js');
+        
+        await processFilesClientSide(filesQueue, options, (msg) => log(msg), async (blob, fileName, originalFile) => {
+            // Callback dla każdego pliku
+            const buffer = await blob.arrayBuffer();
+            const sourcePath = window.electronAPI.getPathForFile ? window.electronAPI.getPathForFile(originalFile) : originalFile.path;
+            
+            const result = await window.electronAPI.saveFile(sourcePath, fileName, buffer, options.optOverwrite);
+            
+            if (result.success) {
+                log(`Zapisano (Canvas): ${result.path}`);
+            } else {
+                log(`Błąd zapisu (Canvas): ${result.message}`);
+            }
+        });
+        
+        log('Zakończono przetwarzanie w trybie awaryjnym.');
+        
+    } catch (e) {
+        log(`BŁĄD KRYTYCZNY (Fallback): ${e.message}`);
+    }
+}
+
 // Zaktualizowana funkcja executeLogic
 async function executeLogic() {
   const selectedFiles = filesQueue.filter(item => item.selected);
@@ -399,10 +427,14 @@ async function executeLogic() {
           if (result.success) {
               log(`SUKCES: Zapisano w katalogu: ${result.path}`);
           } else {
-              log(`BŁĄD: ${result.message}`);
+              log(`BŁĄD WORKERA: ${result.message}`);
+              // --- FALLBACK ---
+              await runFallbackInElectron(selectedFiles, options);
           }
       } catch (e) {
-          log(`BŁĄD KRYTYCZNY: ${e.message}`);
+          log(`BŁĄD API: ${e.message}`);
+          // --- FALLBACK ---
+          await runFallbackInElectron(selectedFiles, options);
       }
       return;
   }

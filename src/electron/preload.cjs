@@ -4,6 +4,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Wysyłamy ścieżki plików i opcje do procesu głównego
     processImages: (files, options) => ipcRenderer.invoke('process-images', files, options),
     
+    // Zapis pojedynczego pliku (dla trybu Fallback / Canvas)
+    saveFile: (path, buffer) => ipcRenderer.invoke('save-file', path, buffer),
+    
     // Odbieranie logów z procesu głównego
     onLog: (callback) => ipcRenderer.on('log-message', (_event, value) => callback(value)),
 
