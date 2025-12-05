@@ -356,8 +356,23 @@ async function executeLogic() {
   if (window.electronAPI) {
       log('Wykryto środowisko Desktop (Electron). Używam natywnego przetwarzania...');
       
+      // Debugowanie ścieżek
       // W Electronie obiekt File ma właściwość .path (pełna ścieżka)
-      const filePaths = selectedFiles.map(item => item.file.path);
+      let filePaths = selectedFiles.map(item => {
+          if (!item.file.path) {
+              log(`OSTRZEŻENIE: Brak ścieżki dla pliku: ${item.file.name}. Sprawdź uprawnienia lub metodę dodawania.`);
+              // Próba fallbacku dla niektórych wersji Electrona (czasem path jest w innym miejscu)
+              return null; 
+          }
+          return item.file.path;
+      }).filter(path => path !== null);
+
+      if (filePaths.length === 0) {
+          log('BŁĄD: Nie udało się pobrać ścieżek plików. Operacja przerwana.');
+          return;
+      }
+      
+      log(`Wysyłanie ${filePaths.length} plików do procesu głównego...`);
       
       const options = { 
           baseName, 
