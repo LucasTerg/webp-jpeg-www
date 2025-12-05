@@ -9,13 +9,12 @@ const truncateFileName = (name, maxLength = 18) => {
   if (name.length <= maxLength) return name;
   
   const parts = name.split('.');
-  const extension = parts.length > 1 ? `.${parts.pop()}` : ''; // Weź rozszerzenie
-  const baseName = parts.join('.'); // Reszta nazwy
+  const extension = parts.length > 1 ? `.${parts.pop()}` : '';
+  const baseName = parts.join('.');
   
-  const startChars = 8; // Ile znaków z początku
-  const endChars = 6;   // Ile znaków z końca (przed rozszerzeniem)
+  const startChars = 8; 
+  const endChars = 6; 
   
-  // Jeśli nazwa bazowa jest bardzo krótka, ale ma rozszerzenie
   if (baseName.length <= startChars) {
       return `${baseName.substring(0, startChars)}...${extension}`;
   }
@@ -24,7 +23,10 @@ const truncateFileName = (name, maxLength = 18) => {
 };
 
 
-let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput, optCrop, optTrimOnly, optAddMargin, optResize, optBgRemove;
+let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput;
+// Nowe kontrolki
+let optAddMargin, optResize, optOverwrite;
+let modeSmart, modeSimple, modeNone;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Loaded - initializing Tools");
@@ -42,11 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ustawienia
     baseNameInput = document.getElementById('base-name');
     startNumberInput = document.getElementById('start-number');
-    optCrop = document.getElementById('opt-crop');
-    optTrimOnly = document.getElementById('opt-trim-only');
+    
+    // Nowe Radio Buttons
+    modeSmart = document.getElementById('mode-smart');
+    modeSimple = document.getElementById('mode-simple');
+    modeNone = document.getElementById('mode-none');
+
+    // Checkboxy Post-process
     optAddMargin = document.getElementById('opt-add-margin');
     optResize = document.getElementById('opt-resize');
-    // optBgRemove = document.getElementById('opt-bg-remove');
+    optOverwrite = document.getElementById('opt-overwrite');
 
     // --- DETEKCJA ELECTRONA (Desktop) ---
     if (window.electronAPI) {
@@ -54,8 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         log('Tryb Desktop (Electron) aktywny.');
         
         // Ustawienia domyślne dla desktopu
-        if (optTrimOnly) optTrimOnly.checked = true; // Prio domyślnie włączone
-        if (optCrop) optCrop.checked = false;        // Zwykłe kadrowanie wyłączone
+        // Domyślnie zaznaczony w HTML jest modeSimple, więc tu nic nie musimy robić
     }
 
     // --- THEME SWITCH INIT ---
@@ -133,14 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reakcja na najechanie (standardowe działanie)
         baseNameInput.addEventListener('mouseenter', updateFromClipboard);
-        
-        // Reakcja na kliknięcie (dla pewności/alternatywy)
-        baseNameInput.addEventListener('click', updateFromClipboard);
-        
-        // Reakcja na focus elementu (np. tabowanie)
+        // baseNameInput.addEventListener('click', updateFromClipboard); // Wyłączone bo denerwuje przy edycji
         baseNameInput.addEventListener('focus', updateFromClipboard);
 
-        // Reakcja na powrót do okna przeglądarki (jeśli mysz jest nad inputem)
         window.addEventListener('focus', () => {
             if (baseNameInput.matches(':hover')) {
                 updateFromClipboard();
@@ -207,14 +208,14 @@ function renderList() {
     // Info Name with Hover Preview
     const span = document.createElement('span');
     span.className = 'file-info';
-    const displayedFileName = truncateFileName(item.file.name); // Użycie funkcji skracającej
+    const displayedFileName = truncateFileName(item.file.name); 
     span.textContent = `[${index + 1}] ${displayedFileName} (${(item.file.size / 1024).toFixed(1)} KB) (${item.width}x${item.height} px)`;
-    span.title = item.file.name; // Pełna nazwa w tooltipie
+    span.title = item.file.name;
     
     // Hover Eventy
     span.addEventListener('mouseenter', (e) => showPreview(e, item.file));
     span.addEventListener('mouseleave', hidePreview);
-    span.addEventListener('mousemove', movePreview); // Żeby tooltip chodził za myszką
+    span.addEventListener('mousemove', movePreview);
 
     // Controls
     const divControls = document.createElement('div');
@@ -239,22 +240,18 @@ const tooltip = document.getElementById('preview-tooltip');
 function showPreview(e, file) {
     if(!tooltip) return;
     
-    // Tworzymy URL tylko na chwilę
     const url = URL.createObjectURL(file);
     tooltip.innerHTML = `<img src="${url}" alt="Preview">`;
     tooltip.style.display = 'block';
     
-    // Pozycjonowanie wstępne
     movePreview(e);
 }
 
 function movePreview(e) {
     if(!tooltip) return;
-    // Przesunięcie o 15px żeby nie zasłaniać kursora
     const x = e.clientX + 15;
     const y = e.clientY + 15;
     
-    // Sprawdzenie czy nie wychodzi poza ekran (proste)
     tooltip.style.left = x + 'px';
     tooltip.style.top = y + 'px';
 }
@@ -262,16 +259,15 @@ function movePreview(e) {
 function hidePreview() {
     if(!tooltip) return;
     tooltip.style.display = 'none';
-    tooltip.innerHTML = ''; // Czyścimy img żeby zwolnić pamięć (browser garbage collector)
+    tooltip.innerHTML = '';
 }
 
 
-// Helper do ładowania obrazu i pobierania wymiarów
 const loadImageDimensions = (file) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      URL.revokeObjectURL(img.src); // Zwolnienie pamięci po załadowaniu
+      URL.revokeObjectURL(img.src);
       resolve({ width: img.width, height: img.height });
     };
     img.onerror = reject;
@@ -279,18 +275,18 @@ const loadImageDimensions = (file) => {
   });
 };
 
-async function addFiles(files) { // <--- make it async
+async function addFiles(files) {
   const filesToAdd = [];
-  for (const file of Array.from(files)) { // <--- use for...of for await
+  for (const file of Array.from(files)) {
     if (file.type.startsWith('image/')) {
       try {
-        const { width, height } = await loadImageDimensions(file); // <--- await dimensions
+        const { width, height } = await loadImageDimensions(file);
         filesToAdd.push({
           file,
           id: Date.now() + Math.random(),
           selected: true,
-          width, // <--- add width
-          height // <--- add height
+          width, 
+          height
         });
         log(`Dodano: ${file.name} (${width}x${height} px)`);
       } catch (error) {
@@ -300,11 +296,10 @@ async function addFiles(files) { // <--- make it async
       log(`BŁĄD: ${file.name} nie jest obrazem.`);
     }
   }
-  filesQueue.push(...filesToAdd); // <--- push all at once
+  filesQueue.push(...filesToAdd);
   renderList();
 }
 
-// Funkcje globalne
 window.moveUp = (index) => {
   if (index > 0) {
     [filesQueue[index - 1], filesQueue[index]] = [filesQueue[index], filesQueue[index - 1]];
@@ -323,22 +318,19 @@ window.removeFile = (index) => {
   const targetItem = filesQueue[index];
   
   if (targetItem.selected) {
-      // GRUPOWE USUWANIE: Jeśli kliknięto na zaznaczony element, usuń WSZYSTKIE zaznaczone
       const initialCount = filesQueue.length;
       filesQueue = filesQueue.filter(item => !item.selected);
       const removedCount = initialCount - filesQueue.length;
       log(`Usunięto zaznaczone pliki: ${removedCount}`);
   } else {
-      // POJEDYNCZE USUWANIE: Kliknięto na niezaznaczony element -> usuń tylko jego
       log(`Usunięto: ${targetItem.file.name}`);
       filesQueue.splice(index, 1);
   }
   renderList();
 };
 
-// Zaktualizowana funkcja executeLogic uwzględniająca TYLKO zaznaczone pliki
+// Zaktualizowana funkcja executeLogic
 async function executeLogic() {
-  // Filtrowanie
   const selectedFiles = filesQueue.filter(item => item.selected);
 
   if (selectedFiles.length === 0) {
@@ -350,24 +342,28 @@ async function executeLogic() {
   const startNum = parseInt(startNumberInput.value) || 1;
   const mode = processingModeSelect.value;
 
-  log(`Rozpoczynanie procedury dla ${selectedFiles.length} plików (${mode === 'local' ? 'LOKALNIE' : 'SERWER'})...`);
+  // Ustalanie flag na podstawie Radio Buttons
+  const isSmart = modeSmart.checked;
+  const isSimple = modeSimple.checked;
+  const isNone = modeNone.checked;
+
+  // Mapowanie na stare flagi
+  const optCropValue = isSmart;
+  const optTrimOnlyValue = isSimple;
+  // isNone = false i false
+
+  log(`Rozpoczynanie procedury dla ${selectedFiles.length} plików...`);
 
   // --- TRYB ELECTRON (Desktop) ---
   if (window.electronAPI) {
       log('Wykryto środowisko Desktop (Electron). Używam natywnego przetwarzania...');
       
-      // Debugowanie ścieżek
-      // W Electronie obiekt File ma właściwość .path (pełna ścieżka)
-      // Używamy helpera getPathForFile (jeśli dostępny) dla lepszej kompatybilności z Flatpak/Sandbox
       let filePaths = selectedFiles.map(item => {
           let path = null;
           if (window.electronAPI.getPathForFile) {
               path = window.electronAPI.getPathForFile(item.file);
           }
-          
-          if (!path) {
-             path = item.file.path;
-          }
+          if (!path) path = item.file.path;
 
           if (!path) {
               log(`OSTRZEŻENIE: Brak ścieżki dla pliku: ${item.file.name}. Sprawdź uprawnienia lub metodę dodawania.`);
@@ -386,13 +382,13 @@ async function executeLogic() {
       const options = { 
           baseName, 
           startNumber: startNum, 
-          optCrop: optCrop.checked, 
-          optTrimOnly: optTrimOnly.checked,
+          optCrop: optCropValue, 
+          optTrimOnly: optTrimOnlyValue,
           optAddMargin: optAddMargin.checked,
-          optResize: optResize.checked 
+          optResize: optResize.checked,
+          optOverwrite: optOverwrite.checked // Nowa opcja
       };
 
-      // Rejestracja listenera logów (jeśli jeszcze nie dodany)
       if (!window.electronLogListenerAdded) {
           window.electronAPI.onLog((msg) => log(msg));
           window.electronLogListenerAdded = true;
@@ -411,19 +407,19 @@ async function executeLogic() {
       return;
   }
 
+  // --- TRYB LOCAL (Web) - Tutaj mamy mniejsze możliwości ---
   if (mode === 'local') {
     const options = { 
       baseName, 
       startNumber: startNum, 
-      optCrop: optCrop.checked, 
-      optTrimOnly: optTrimOnly.checked,
+      optCrop: optCropValue, 
+      optTrimOnly: optTrimOnlyValue,
       optAddMargin: optAddMargin.checked,
       optResize: optResize.checked 
     };
 
     try {
       const { processFilesClientSide } = await import('./client-processor.js');
-      // Przekazujemy tylko zaznaczone!
       const zipBlob = await processFilesClientSide(selectedFiles, options, (msg) => log(msg));
       
       const url = window.URL.createObjectURL(zipBlob);
@@ -440,38 +436,6 @@ async function executeLogic() {
     return;
   }
 
-  // SERVER MODE
-  const formData = new FormData();
-  selectedFiles.forEach((item) => {
-    formData.append('images', item.file);
-  });
-  formData.append('newName', baseName);
-  formData.append('startNumber', startNum);
-  formData.append('optCrop', optCrop.checked);
-  formData.append('optTrimOnly', optTrimOnly.checked);
-  formData.append('optAddMargin', optAddMargin.checked);
-  formData.append('optResize', optResize.checked);
-
-  try {
-    const API_URL = 'http://localhost:3000/upload-tools';
-    const response = await fetch(API_URL, { method: 'POST', body: formData });
-
-    if (response.ok) {
-      log('SUKCES: Pliki przetworzone.');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'processed.zip';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      log('Rozpoczęto pobieranie archiwum.');
-    } else {
-      const errText = await response.text();
-      log(`BŁĄD SERWERA: ${errText}`);
-    }
-  } catch (error) {
-    log(`BŁĄD SIECI: ${error.message}`);
-  }
+  // SERVER MODE (Dla kompatybilności, ale w Electronie nie używany)
+  // ... (pomijam kod serwera webowego, bo w Electronie go nie używamy)
 }

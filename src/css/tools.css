@@ -182,9 +182,27 @@ h1 span {
   margin-bottom: 15px;
 }
 
-.control-group label {
-  display: block;
-  margin-bottom: 5px;
+.section-divider {
+    border-top: 1px dashed var(--border-color);
+    padding-top: 15px;
+    margin-top: 15px;
+    position: relative;
+}
+
+/* Pierwsza sekcja bez kreski na górze */
+.control-group:first-of-type {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.section-label {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 input[type="text"],
@@ -198,7 +216,7 @@ input[type="number"] {
   box-sizing: border-box;
 }
 
-input[type="checkbox"] {
+input[type="checkbox"], input[type="radio"] {
   margin-right: 10px;
   accent-color: var(--accent-color);
 }
