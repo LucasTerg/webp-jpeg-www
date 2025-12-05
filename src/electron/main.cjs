@@ -68,8 +68,10 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
         const workerPath = path.join(__dirname, 'worker.cjs');
         
         // Uruchamiamy workera jako osobny proces Node.js
-        // Dzięki temu sharp działa w czystym środowisku, z dala od Electrona
-        const worker = fork(workerPath);
+        // Ustawiamy ELECTRON_RUN_AS_NODE, aby nie otwierało się nowe okno aplikacji!
+        const worker = fork(workerPath, [], {
+            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
+        });
 
         // Wysyłamy dane do workera
         worker.send({
