@@ -117,16 +117,24 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
                     }
                 }
 
-                // 2. Trim
+                // 2. Trim (Double Trim Logic)
                 let currentWidth = width;
                 let currentHeight = height;
                 let wasTrimmed = false;
 
                 if (optCrop || optTrimOnly) {
-                    const trimmedData = await image.clone().trim().toBuffer({ resolveWithObject: true });
-                    image = sharp(trimmedData.data);
-                    currentWidth = trimmedData.info.width;
-                    currentHeight = trimmedData.info.height;
+                    // Pierwszy trim (usuń przezroczystość)
+                    const firstTrimBuffer = await image.clone().trim().toBuffer();
+                    let tempImage = sharp(firstTrimBuffer);
+                    
+                    // Drugi trim (usuń białe tło z thresholdem 10)
+                    const secondTrimData = await tempImage.trim({ threshold: 10 }).toBuffer({ resolveWithObject: true });
+                    
+                    image = sharp(secondTrimData.data);
+                    currentWidth = secondTrimData.info.width;
+                    currentHeight = secondTrimData.info.height;
+                    
+                    // Sprawdź czy wymiary zmieniły się względem oryginału
                     wasTrimmed = currentWidth < width || currentHeight < height;
                 }
 
