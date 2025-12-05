@@ -1,7 +1,7 @@
 {
   "name": "photo-cropper-tool",
   "productName": "Photo Cropper Tool",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Narzędzie do masowego kadrowania i optymalizacji zdjęć (WebP/JPEG/MozJPEG)",
   "private": true,
   "type": "module",
