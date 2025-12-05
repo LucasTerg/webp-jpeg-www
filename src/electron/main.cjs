@@ -2,11 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
-const sharp = require('sharp');
-
-// Wyłączamy cache i SIMD w sharp, aby uniknąć crashy libvips w Electronie
-sharp.cache(false);
-sharp.simd(false);
+const { fork } = require('child_process'); // <--- Kluczowa zmiana
 
 // Obsługa przeładowania w trybie dev
 try {
@@ -51,160 +47,65 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// --- HELPER ZAPISU ---
-const saveOptimizedImage = async (sharpInstance, outputPath) => {
-    const LIMIT_SMALL = 1.5 * 1024 * 1024;
-    const LIMIT_HARD = 3.0 * 1024 * 1024;
-    const baseOptions = { mozjpeg: true, progressive: true, optimiseScans: true };
-  
-    let buffer = await sharpInstance.clone().flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 100, chromaSubsampling: '4:4:4' }).toBuffer();
-    if (buffer.length <= LIMIT_SMALL) { await fsPromises.writeFile(outputPath, buffer); return; }
-  
-    buffer = await sharpInstance.clone().flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 96 }).toBuffer();
-    if (buffer.length <= LIMIT_HARD) { await fsPromises.writeFile(outputPath, buffer); return; }
-  
-    buffer = await sharpInstance.clone().flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 92 }).toBuffer();
-    if (buffer.length <= LIMIT_HARD) { await fsPromises.writeFile(outputPath, buffer); return; }
-  
-    buffer = await sharpInstance.clone().flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 89 }).toBuffer();
-    if (buffer.length <= LIMIT_HARD) { await fsPromises.writeFile(outputPath, buffer); return; }
-  
-    await sharpInstance.flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 85 }).toFile(outputPath);
-};
-
 ipcMain.handle('process-images', async (event, filePaths, options) => {
     const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize } = options;
     
     if (!filePaths || filePaths.length === 0) return { success: false, message: 'Brak plików.' };
 
-    // Ustalanie folderu źródłowego (bierzemy z pierwszego pliku)
     const sourceDir = path.dirname(filePaths[0]);
 
-    // Ustalanie nazwy podfolderu na podstawie opcji
+    // Ustalanie nazwy podfolderu
     let subDirName = '_processed';
-    if (optTrimOnly) subDirName = '_prio'; // Samo Kadrowanie Prio
-    else if (optCrop) subDirName = '_kadrowanie5px'; // Kadrowanie + Margines
-    else if (optAddMargin) subDirName = '_ramka5px'; // Ramka 5px
-    else if (optResize) subDirName = '_500'; // Dopełnij do 500px
+    if (optTrimOnly) subDirName = '_prio';
+    else if (optCrop) subDirName = '_kadrowanie5px';
+    else if (optAddMargin) subDirName = '_ramka5px';
+    else if (optResize) subDirName = '_500';
     
     const outputDir = path.join(sourceDir, subDirName);
 
-    // Tworzenie katalogu
-    try {
-        await fsPromises.mkdir(outputDir, { recursive: true });
-    } catch (e) {
-        return { success: false, message: `Nie można utworzyć katalogu: ${outputDir}` };
-    }
-
-    try {
-        // Zmiana na pętlę sekwencyjną (for...of) zamiast Promise.all
-        // Zapobiega to crashom libvips przy wielu plikach naraz
-        for (let index = 0; index < filePaths.length; index++) {
-            const inputPath = filePaths[index];
-            const currentNum = parseInt(startNumber) + index;
-            const fileName = `${baseName}-${currentNum}.jpg`;
-            const outputPath = path.join(outputDir, fileName);
-
-            try {
-                let image = sharp(inputPath);
-                const metadata = await image.metadata();
-                let { width, height } = metadata;
-                
-                // 1. Detekcja
-                let hasBackgroundContext = false;
-                if (optCrop || optTrimOnly) {
-                    const corners = [{ left: 0, top: 0 }, { left: width - 1, top: 0 }, { left: 0, top: height - 1 }, { left: width - 1, top: height - 1 }];
-                    for (const corner of corners) {
-                        const pixelBuffer = await image.clone().extract({ left: corner.left, top: corner.top, width: 1, height: 1 }).toBuffer();
-                        const a = pixelBuffer.length >= 4 ? pixelBuffer[3] : 255;
-                        if ((pixelBuffer[0] > 230 && pixelBuffer[1] > 230 && pixelBuffer[2] > 230) || a < 255) {
-                            hasBackgroundContext = true;
-                            break;
-                        }
-                    }
-                }
-
-                // 2. Trim (Double Trim Logic)
-                let currentWidth = width;
-                let currentHeight = height;
-                let wasTrimmed = false;
-
-                if (optCrop || optTrimOnly) {
-                    // Pierwszy trim (usuń przezroczystość)
-                    const firstTrimBuffer = await image.clone().trim().toBuffer();
-                    
-                    // Upewniamy się że obiekt jest zwolniony
-                    let tempImage = sharp(firstTrimBuffer);
-                    
-                    // Drugi trim (usuń białe tło z thresholdem 10)
-                    const secondTrimData = await tempImage.trim({ threshold: 10 }).toBuffer({ resolveWithObject: true });
-                    
-                    image = sharp(secondTrimData.data);
-                    currentWidth = secondTrimData.info.width;
-                    currentHeight = secondTrimData.info.height;
-                    
-                    // Sprawdź czy wymiary zmieniły się względem oryginału
-                    wasTrimmed = currentWidth < width || currentHeight < height;
-                }
-
-                // 3. Decyzja o marginesie
-                const autoMargin = (optCrop && !optTrimOnly && (hasBackgroundContext || wasTrimmed));
-                const forceMargin = optAddMargin;
-                const willAddMargin = autoMargin || forceMargin;
-                const marginTotal = willAddMargin ? 10 : 0;
-
-                // 4. Skalowanie do limitu
-                const MAX_W = 3000;
-                const MAX_H = 3600;
-                const maxContentW = MAX_W - marginTotal;
-                const maxContentH = MAX_H - marginTotal;
-
-                if (currentWidth > maxContentW || currentHeight > maxContentH) {
-                    image = image.resize({ width: maxContentW, height: maxContentH, fit: 'inside', withoutEnlargement: true });
-                    const resizedBuffer = await image.toBuffer({ resolveWithObject: true });
-                    image = sharp(resizedBuffer.data);
-                    currentWidth = resizedBuffer.info.width;
-                    currentHeight = resizedBuffer.info.height;
-                }
-
-                // 5. Margines
-                if (willAddMargin) {
-                    image = image.extend({ top: 5, bottom: 5, left: 5, right: 5, background: '#ffffff' });
-                    currentWidth += 10;
-                    currentHeight += 10;
-                }
-
-                // 6. Padding
-                if (optResize) {
-                    const targetWidth = Math.max(currentWidth, 500);
-                    const targetHeight = Math.max(currentHeight, 500);
-                    if (currentWidth < targetWidth || currentHeight < targetHeight) {
-                        const xPad = targetWidth - currentWidth;
-                        const yPad = targetHeight - currentHeight;
-                        const left = Math.floor(xPad / 2);
-                        const top = Math.floor(yPad / 2);
-                        image = image.extend({ top: top, bottom: yPad - top, left: left, right: xPad - left, background: '#ffffff' });
-                    }
-                }
-
-                await saveOptimizedImage(image, outputPath);
-                mainWindow.webContents.send('log-message', `Zapisano: ${subDirName}/${fileName}`);
-
-            } catch (err) {
-                console.error(`Błąd pliku ${inputPath}:`, err);
-                mainWindow.webContents.send('log-message', `BŁĄD: ${path.basename(inputPath)}`);
-            }
-        }
-
-        // await Promise.all(processingPromises); // <--- USUNIĘTE (zastąpione pętlą)
+    // --- FORKOWANIE PROCESU WORKERA ---
+    return new Promise((resolve, reject) => {
+        const workerPath = path.join(__dirname, 'worker.cjs');
         
-        // Otwórz folder po zakończeniu (Wyłączone na prośbę - problem z fullscreen na SteamOS)
-        // shell.openPath(outputDir);
+        // Uruchamiamy workera jako osobny proces Node.js
+        // Dzięki temu sharp działa w czystym środowisku, z dala od Electrona
+        const worker = fork(workerPath);
 
-        return { success: true, path: outputDir };
+        // Wysyłamy dane do workera
+        worker.send({
+            type: 'process-images',
+            payload: {
+                filePaths,
+                options,
+                outputDir
+            }
+        });
 
-    } catch (error) {
-        console.error('Global error:', error);
-        return { success: false, message: error.message };
-    }
+        // Nasłuchujemy wiadomości od workera
+        worker.on('message', (msg) => {
+            if (msg.type === 'log') {
+                // Przekazujemy logi do okna renderera
+                mainWindow.webContents.send('log-message', msg.message);
+            } else if (msg.type === 'done') {
+                // Koniec pracy
+                worker.kill(); // Zabijamy proces
+                if (msg.success) {
+                    resolve({ success: true, path: msg.path });
+                } else {
+                    resolve({ success: false, message: msg.message });
+                }
+            }
+        });
+
+        worker.on('error', (err) => {
+            console.error('Worker error:', err);
+            resolve({ success: false, message: `Błąd krytyczny workera: ${err.message}` });
+        });
+
+        worker.on('exit', (code) => {
+            if (code !== 0 && code !== null) {
+                resolve({ success: false, message: `Worker zakończył pracę z kodem błędu: ${code}` });
+            }
+        });
+    });
 });
