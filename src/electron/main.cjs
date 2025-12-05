@@ -4,6 +4,10 @@ const fs = require('fs');
 const fsPromises = require('fs').promises;
 const sharp = require('sharp');
 
+// Wyłączamy cache i SIMD w sharp, aby uniknąć crashy libvips w Electronie
+sharp.cache(false);
+sharp.simd(false);
+
 // Obsługa przeładowania w trybie dev
 try {
   if (require('electron-is-dev')) {
@@ -93,7 +97,10 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
     }
 
     try {
-        const processingPromises = filePaths.map(async (inputPath, index) => {
+        // Zmiana na pętlę sekwencyjną (for...of) zamiast Promise.all
+        // Zapobiega to crashom libvips przy wielu plikach naraz
+        for (let index = 0; index < filePaths.length; index++) {
+            const inputPath = filePaths[index];
             const currentNum = parseInt(startNumber) + index;
             const fileName = `${baseName}-${currentNum}.jpg`;
             const outputPath = path.join(outputDir, fileName);
@@ -125,6 +132,8 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
                 if (optCrop || optTrimOnly) {
                     // Pierwszy trim (usuń przezroczystość)
                     const firstTrimBuffer = await image.clone().trim().toBuffer();
+                    
+                    // Upewniamy się że obiekt jest zwolniony
                     let tempImage = sharp(firstTrimBuffer);
                     
                     // Drugi trim (usuń białe tło z thresholdem 10)
@@ -185,9 +194,9 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
                 console.error(`Błąd pliku ${inputPath}:`, err);
                 mainWindow.webContents.send('log-message', `BŁĄD: ${path.basename(inputPath)}`);
             }
-        });
+        }
 
-        await Promise.all(processingPromises);
+        // await Promise.all(processingPromises); // <--- USUNIĘTE (zastąpione pętlą)
         
         // Otwórz folder po zakończeniu
         shell.openPath(outputDir);
