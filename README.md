@@ -62,7 +62,7 @@ Zobacz jak to działa w praktyce:
     npm install
     ```
 
-### Uruchomienie (Tryb Deweloperski)
+### Uruchomienie (Tryb Deweloperski - WEB)
 
 1.  Uruchom serwer (frontend + backend):
     ```bash
@@ -71,6 +71,58 @@ Zobacz jak to działa w praktyce:
 2.  Otwórz przeglądarkę pod adresem (zazwyczaj):
     *   **Strona Główna:** `http://localhost:5173/`
     *   **Narzędzia (Tools):** `http://localhost:5173/tools.html`
+
+### Uruchomienie (Tryb Deweloperski - ELECTRON)
+
+1.  Uruchom aplikację Electron w trybie deweloperskim:
+    ```bash
+    npm run electron:dev
+    ```
+    Okno Electrona otworzy się, ładując interfejs Narzędzi.
+
+## 🚀 Instalacja Aplikacji Desktopowej (Electron)
+
+Gotowe instalatory dla Windowsa, macOS i Linuxa znajdziesz w zakładce [**Releases**](https://github.com/LucasTerg/webp-jpeg-www/releases) na GitHubie.
+
+### Windows (.exe)
+
+Pobierz plik `.exe` i uruchom instalator.
+
+### macOS (.dmg)
+
+Pobierz plik `.dmg` i przeciągnij ikonę aplikacji do folderu `Applications`.
+
+### Linux
+
+Dostępne są dwie główne opcje:
+
+#### 1. AppImage
+Pobierz plik `.AppImage`. Jest to uniwersalny format, który działa na większości dystrybucji Linuxa bez instalacji.
+*   Nadaj plikowi prawa do wykonywania: `chmod +x "Photo Cropper Tool-1.0.XX.AppImage"` (zastąp `1.0.XX` numerem wersji).
+*   Uruchom plik: `./"Photo Cropper Tool-1.0.XX.AppImage"`.
+
+#### 2. Debian/Ubuntu (.deb)
+Pobierz plik `.deb`. Jest to natywny pakiet dla systemów Debian-based (Ubuntu, Mint, itp.).
+*   Zainstaluj pakiet:
+    ```bash
+    sudo dpkg -i photo-cropper-tool_1.0.XX_amd64.deb
+    ```
+    (zastąp `1.0.XX` numerem wersji).
+*   **Problemy z zależnościami (Deps Fix):**
+    Jeśli `dpkg` zgłosi błędy zależności (np. `libnotify4`, `libxss1`, `libsecret-1-0`), uruchom komendę, aby automatycznie je naprawić i dokończyć instalację:
+    ```bash
+    sudo apt --fix-broken install
+    ```
+*   Po instalacji aplikację znajdziesz w menu systemowym lub uruchomisz z terminala: `photo-cropper-tool`.
+
+#### 3. Flatpak
+Pobierz plik `.flatpak`. Flatpak jest formatem uniwersalnym, zapewniającym izolację aplikacji. Wymaga zainstalowanego środowiska Flatpak.
+*   Zainstaluj pakiet Flatpak:
+    ```bash
+    flatpak install --user /ścieżka/do/Photo-Cropper-1.0.XX-x86_64.flatpak
+    ```
+    (zastąp `1.0.XX` numerem wersji i `ścieżka/do` odpowiednią ścieżką).
+*   Aplikację uruchomisz z menu systemowego lub komendą: `flatpak run com.terg.photocropper`.
 
 ## 🤝 Licencja
 
