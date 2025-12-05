@@ -3,7 +3,7 @@ name: Build Electron App
 on:
   push:
     tags:
-      - 'v*' # Uruchom tylko gdy wypchniesz tag np. v1.0.0
+      - 'v*'
 
 jobs:
   build:
@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
@@ -28,14 +28,13 @@ jobs:
       - name: Build Frontend
         run: npm run build -- --base=./
 
-      # Electron Builder sam zadba o rebuild native modules (sharp)
       - name: Build Electron App
         run: npm run electron:build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
           path: release/*.{exe,dmg,AppImage,deb}
