@@ -52,31 +52,20 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
     if (!filePaths || filePaths.length === 0) return { success: false, message: 'Brak plików.' };
 
     const sourceDir = path.dirname(filePaths[0]);
-
-    // Ustalanie nazwy podfolderu
-    let subDirName = '_processed';
-    if (optTrimOnly) subDirName = '_prio';
-    else if (optCrop) subDirName = '_kadrowanie5px';
-    else if (optAddMargin) subDirName = '_ramka5px';
-    else if (optResize) subDirName = '_500';
-    
-    const outputDir = path.join(sourceDir, subDirName);
+    const outputDir = path.join(sourceDir, '_terg'); // Stały podfolder _terg
 
     // --- UTILITY PROCESS (Worker) ---
     return new Promise((resolve, reject) => {
         const workerPath = path.join(__dirname, 'worker.cjs');
         
-        // Uruchamiamy workera jako Utility Process (Headless Node)
-        // To izoluje operacje sharp/libvips od głównego procesu Electrona
         const worker = utilityProcess.fork(workerPath);
 
-        // Wysyłamy dane do workera
         worker.postMessage({
             type: 'process-images',
             payload: {
                 filePaths,
                 options,
-                outputDir
+                outputDir // Przekazujemy ten stały outputDir
             }
         });
 

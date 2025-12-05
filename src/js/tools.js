@@ -409,6 +409,7 @@ async function executeLogic() {
 
   // --- TRYB LOCAL (Web) - Tutaj mamy mniejsze możliwości ---
   if (mode === 'local') {
+    log('Tryb WEB (Lokalny) - start przetwarzania...');
     const options = { 
       baseName, 
       startNumber: startNum, 

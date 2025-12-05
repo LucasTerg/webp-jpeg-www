@@ -18,7 +18,7 @@ const getUniquePath = async (filePath) => {
         try {
             await fsPromises.access(currentPath);
             // Plik istnieje, generujemy nową nazwę
-            currentPath = path.join(dir, `${base}-copy${counter}${ext}`);
+            currentPath = path.join(dir, `${base}-v${counter}${ext}`);
             counter++;
         } catch (e) {
             // Plik nie istnieje, można użyć
@@ -36,7 +36,7 @@ process.parentPort.on('message', async (event) => {
         const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize, optOverwrite } = options;
 
         try {
-            // Tworzenie katalogu
+            // Tworzenie katalogu (outputDir jest już stałym _terg)
             await fsPromises.mkdir(outputDir, { recursive: true });
 
             for (let index = 0; index < filePaths.length; index++) {
