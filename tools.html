@@ -4,16 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TERG Tools // Hacker Edition</title>
-    <script type="module" crossorigin src="/webp-jpeg-www/tools.js"></script>
-    <link rel="modulepreload" crossorigin href="/webp-jpeg-www/assets/modulepreload-polyfill-B5Qt9EMX.js">
-    <link rel="stylesheet" crossorigin href="/webp-jpeg-www/assets/tools-TwKGS3zy.css">
+    <!-- FontAwesome dla ikonek -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" crossorigin src="./tools.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="stylesheet" crossorigin href="./assets/tools-CKHDptvR.css">
   </head>
   <body>
     <div class="hacker-container">
       <header>
         <h1><span>SYSTEM</span> NARZĘDZIOWY PIM</h1>
         <div>
-          <a href="index.html" class="btn btn-sm">Wróć</a>
+          <!-- Przycisk "Wróć" tylko w wersji WEB -->
+          <a href="index.html" class="btn btn-sm web-only">Wróć</a>
           <button id="theme-toggle" class="btn btn-sm">L/D MODE</button>
         </div>
       </header>
@@ -52,11 +55,11 @@
 
         <div class="control-group">
           <label class="checkbox-label">
-            <input type="checkbox" id="opt-crop" checked />
+            <input type="checkbox" id="opt-crop" />
             [KADROWANIE + MARGINES 5PX]
           </label>
           <label class="checkbox-label">
-            <input type="checkbox" id="opt-trim-only" />
+            <input type="checkbox" id="opt-trim-only" checked />
             [SAMO KADROWANIE Prio]
           </label>
           <label class="checkbox-label">
@@ -69,7 +72,8 @@
           </label>
         </div>
 
-        <div class="control-group">
+        <!-- Ukryte w Electronie (automatycznie native) -->
+        <div class="control-group web-only" id="mode-selector-group">
           <label for="processing-mode">TRYB PRZETWARZANIA:</label>
           <select id="processing-mode" style="width: 100%; background: var(--bg-color); color: var(--accent-color); border: 1px solid var(--border-color); padding: 8px;">
             <option value="local">LOKALNY (Przeglądarka - GitHub Pages)</option>
@@ -84,97 +88,23 @@
       <div class="status-log" id="console-log">
         <p>> System gotowy...</p>
       </div>
+
+      <!-- Hakerska Stopka -->
+      <footer class="hacker-footer">
+          <div class="footer-content">
+              <a href="https://github.com/LucasTerg/webp-jpeg-www" target="_blank" class="footer-icon" title="GitHub Repo">
+                  <i class="fab fa-github"></i>
+              </a>
+              <a href="mailto:dev@lmk.one" class="footer-icon" title="Contact Dev">
+                  <i class="fas fa-envelope"></i>
+              </a>
+              <span class="footer-text">POWERED BY ELECTRON & SHARP</span>
+          </div>
+      </footer>
+
     </div>
 
     <div id="preview-tooltip" class="preview-tooltip"></div>
-
-    <!-- Floating Action Button Navigation -->
-<style>
-  .fab-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-end;
-  }
-  
-  .fab-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: #333;
-    color: #fff;
-    border: 2px solid #555;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-decoration: none;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Ujednolicony transition */
-    overflow: hidden;
-    white-space: nowrap;
-    font-family: sans-serif;
-    position: relative;
-    font-size: 1rem;
-    transform: translateX(0); /* Reset dla domyślnego stanu */
-  }
-  
-  .fab-btn:hover {
-    width: 150px; /* Zwiększona szerokość dla tekstu */
-    border-radius: 25px;
-    background: #444;
-    border-color: #00ff41;
-    justify-content: flex-start;
-    padding-left: 10px; /* Dodatkowy padding z lewej */
-    transform: translateX(-10px); /* Przesunięcie całego przycisku w lewo */
-  }
-  
-  .fab-icon {
-    font-size: 24px;
-    line-height: 1;
-    min-width: 24px;
-    text-align: center;
-    /* Usuwamy transform z ikony, będzie przesuwana razem z całym przyciskiem */
-    position: absolute; /* Użyj absolute, by mieć kontrolę nad pozycją */
-    left: 8px; /* Domyślna pozycja ikony */
-    transition: left 0.3s;
-  }
-  
-  .fab-btn:hover .fab-icon {
-    left: 10px; /* Przesunięcie ikony w lewo na hover */
-    margin-right: 0; /* Reset */
-  }
-  
-  .fab-btn span {
-    opacity: 0;
-    margin-left: 40px; /* Domyślne odsunięcie tekstu, by nie nachodził na ikonę */
-    font-size: 14px;
-    transition: opacity 0.2s 0.1s;
-    pointer-events: none;
-    color: #00ff41;
-  }
-  
-  .fab-btn:hover span {
-    opacity: 1;
-    pointer-events: auto;
-    margin-left: 45px; /* Pozycja tekstu względem lewej krawędzi przycisku */
-  }
-</style>
-
-<div class="fab-container">
-  <a href="index.html" class="fab-btn" title="Strona Główna">
-    <div class="fab-icon">🏠</div>
-    <span>HOME</span>
-  </a>
-  <a href="tools.html" class="fab-btn" title="Zaawansowane Narzędzia">
-    <div class="fab-icon">🛠️</div>
-    <span>TOOLS</span>
-  </a>
-</div>
-
+    
   </body>
 </html>
