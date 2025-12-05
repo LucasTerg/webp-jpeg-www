@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -16,6 +19,13 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
+
+      # Krok tylko dla Linuxa: Instalacja narzędzi Flatpak
+      - name: Install Linux Dependencies (Flatpak)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -37,5 +47,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
-          path: release/*.{exe,dmg,AppImage,deb}
+          path: release/*.{exe,dmg,AppImage,deb,flatpak}
           if-no-files-found: ignore
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: release/*.{exe,dmg,AppImage,deb,flatpak}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
