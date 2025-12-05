@@ -3,6 +3,27 @@
 // alert("Tools script loaded!");
 
 let filesQueue = [];
+
+// --- HELPER: SKRACANIE NAZWY PLIKU ---
+const truncateFileName = (name, maxLength = 18) => {
+  if (name.length <= maxLength) return name;
+  
+  const parts = name.split('.');
+  const extension = parts.length > 1 ? `.${parts.pop()}` : ''; // Weź rozszerzenie
+  const baseName = parts.join('.'); // Reszta nazwy
+  
+  const startChars = 8; // Ile znaków z początku
+  const endChars = 6;   // Ile znaków z końca (przed rozszerzeniem)
+  
+  // Jeśli nazwa bazowa jest bardzo krótka, ale ma rozszerzenie
+  if (baseName.length <= startChars) {
+      return `${baseName.substring(0, startChars)}...${extension}`;
+  }
+
+  return `${baseName.substring(0, startChars)}...${baseName.substring(baseName.length - endChars)}${extension}`;
+};
+
+
 let dropzone, fileInput, fileList, clearBtn, executeBtn, consoleLog, themeToggle, processingModeSelect, baseNameInput, startNumberInput, optCrop, optTrimOnly, optAddMargin, optResize, optBgRemove;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -186,7 +207,9 @@ function renderList() {
     // Info Name with Hover Preview
     const span = document.createElement('span');
     span.className = 'file-info';
-    span.textContent = `[${index + 1}] ${item.file.name} (${(item.file.size / 1024).toFixed(1)} KB) (${item.width}x${item.height} px)`;
+    const displayedFileName = truncateFileName(item.file.name); // Użycie funkcji skracającej
+    span.textContent = `[${index + 1}] ${displayedFileName} (${(item.file.size / 1024).toFixed(1)} KB) (${item.width}x${item.height} px)`;
+    span.title = item.file.name; // Pełna nazwa w tooltipie
     
     // Hover Eventy
     span.addEventListener('mouseenter', (e) => showPreview(e, item.file));
