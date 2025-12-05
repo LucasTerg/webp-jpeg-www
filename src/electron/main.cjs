@@ -198,8 +198,8 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
 
         // await Promise.all(processingPromises); // <--- USUNIĘTE (zastąpione pętlą)
         
-        // Otwórz folder po zakończeniu
-        shell.openPath(outputDir);
+        // Otwórz folder po zakończeniu (Wyłączone na prośbę - problem z fullscreen na SteamOS)
+        // shell.openPath(outputDir);
 
         return { success: true, path: outputDir };
 
