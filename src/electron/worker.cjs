@@ -6,7 +6,10 @@ const sharp = require('sharp');
 // Wyłączamy cache dla bezpieczeństwa
 sharp.cache(false);
 
-process.on('message', async (msg) => {
+// Obsługa Utility Process (Electron)
+process.parentPort.on('message', async (event) => {
+    const msg = event.data; // W utilityProcess dane są w .data
+    
     if (msg.type === 'process-images') {
         const { filePaths, options, outputDir } = msg.payload;
         const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize } = options;
@@ -23,6 +26,7 @@ process.on('message', async (msg) => {
 
                 try {
                     let image = sharp(inputPath);
+                    // ... (reszta logiki bez zmian) ...
                     const metadata = await image.metadata();
                     let { width, height } = metadata;
 
@@ -112,9 +116,7 @@ process.on('message', async (msg) => {
                             if (buffer.length > LIMIT_HARD) {
                                 buffer = await image.clone().flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 89 }).toBuffer();
                                 if (buffer.length > LIMIT_HARD) {
-                                    // Finalny fallback, zapisujemy bezpośrednio do pliku
                                     await image.flatten({ background: '#ffffff' }).jpeg({ ...baseOptions, quality: 85 }).toFile(outputPath);
-                                    // buffer jest już zapisany, więc czyścimy zmienną żeby nie zapisać drugi raz
                                     buffer = null; 
                                 }
                             }
@@ -125,18 +127,17 @@ process.on('message', async (msg) => {
                         await fsPromises.writeFile(outputPath, buffer);
                     }
 
-                    // Wysyłamy log do głównego procesu
-                    process.send({ type: 'log', message: `Zapisano: ${path.basename(outputDir)}/${fileName}` });
+                    process.parentPort.postMessage({ type: 'log', message: `Zapisano: ${path.basename(outputDir)}/${fileName}` });
 
                 } catch (err) {
-                    process.send({ type: 'log', message: `BŁĄD: ${path.basename(inputPath)} - ${err.message}` });
+                    process.parentPort.postMessage({ type: 'log', message: `BŁĄD: ${path.basename(inputPath)} - ${err.message}` });
                 }
             }
 
-            process.send({ type: 'done', success: true, path: outputDir });
+            process.parentPort.postMessage({ type: 'done', success: true, path: outputDir });
 
         } catch (error) {
-            process.send({ type: 'done', success: false, message: error.message });
+            process.parentPort.postMessage({ type: 'done', success: false, message: error.message });
         }
     }
 });

@@ -1,80 +1,28 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, utilityProcess } = require('electron'); // <--- Dodano utilityProcess
 const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
-const { fork } = require('child_process'); // <--- Kluczowa zmiana
+// const { fork } = require('child_process'); // <--- USUNIĘTO
+
+// Wyłączamy cache i SIMD w sharp, aby uniknąć crashy libvips w Electronie
+// const sharp = require('sharp'); // <--- USUNIĘTE Z PROCESU GŁÓWNEGO!
 
 // Obsługa przeładowania w trybie dev
-try {
-  if (require('electron-is-dev')) {
-    require('electron-reloader')(module);
-  }
-} catch (_) {}
-
-let mainWindow;
-
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 900,
-    backgroundColor: '#0d1117',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false
-    },
-    icon: path.join(__dirname, '../../public/favicon.svg')
-  });
-
-  const isDev = !app.isPackaged;
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:5173/tools.html');
-    mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../../dist/tools.html'));
-  }
-}
-
-app.whenReady().then(() => {
-  createWindow();
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
-
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit();
-});
 
 ipcMain.handle('process-images', async (event, filePaths, options) => {
-    const { baseName, startNumber, optCrop, optTrimOnly, optAddMargin, optResize } = options;
-    
-    if (!filePaths || filePaths.length === 0) return { success: false, message: 'Brak plików.' };
-
-    const sourceDir = path.dirname(filePaths[0]);
-
-    // Ustalanie nazwy podfolderu
-    let subDirName = '_processed';
-    if (optTrimOnly) subDirName = '_prio';
-    else if (optCrop) subDirName = '_kadrowanie5px';
-    else if (optAddMargin) subDirName = '_ramka5px';
-    else if (optResize) subDirName = '_500';
+    // ...
     
     const outputDir = path.join(sourceDir, subDirName);
 
-    // --- FORKOWANIE PROCESU WORKERA ---
+    // --- UTILITY PROCESS ---
     return new Promise((resolve, reject) => {
         const workerPath = path.join(__dirname, 'worker.cjs');
         
-        // Uruchamiamy workera jako osobny proces Node.js
-        // Ustawiamy ELECTRON_RUN_AS_NODE, aby nie otwierało się nowe okno aplikacji!
-        const worker = fork(workerPath, [], {
-            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
-        });
+        // Uruchamiamy workera jako Utility Process
+        const worker = utilityProcess.fork(workerPath);
 
         // Wysyłamy dane do workera
-        worker.send({
+        worker.postMessage({
             type: 'process-images',
             payload: {
                 filePaths,
@@ -86,28 +34,16 @@ ipcMain.handle('process-images', async (event, filePaths, options) => {
         // Nasłuchujemy wiadomości od workera
         worker.on('message', (msg) => {
             if (msg.type === 'log') {
-                // Przekazujemy logi do okna renderera
                 mainWindow.webContents.send('log-message', msg.message);
             } else if (msg.type === 'done') {
-                // Koniec pracy
-                worker.kill(); // Zabijamy proces
+                worker.kill();
                 if (msg.success) {
                     resolve({ success: true, path: msg.path });
-                } else {
+                }
+            } else {
                     resolve({ success: false, message: msg.message });
                 }
             }
         });
+        // ... reszta handlerów error/exit
 
-        worker.on('error', (err) => {
-            console.error('Worker error:', err);
-            resolve({ success: false, message: `Błąd krytyczny workera: ${err.message}` });
-        });
-
-        worker.on('exit', (code) => {
-            if (code !== 0 && code !== null) {
-                resolve({ success: false, message: `Worker zakończył pracę z kodem błędu: ${code}` });
-            }
-        });
-    });
-});
