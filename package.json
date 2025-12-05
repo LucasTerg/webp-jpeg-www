@@ -1,8 +1,14 @@
 {
   "name": "photo-cropper-tool",
   "productName": "Photo Cropper Tool",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Narzędzie do masowego kadrowania i optymalizacji zdjęć (WebP/JPEG/MozJPEG)",
+  "optionalDependencies": {
+    "@img/sharp-darwin-x64": "^0.33.5",
+    "@img/sharp-darwin-arm64": "^0.33.5",
+    "@img/sharp-win32-x64": "^0.33.5",
+    "@img/sharp-linux-x64": "^0.33.5"
+  },
   "private": true,
   "type": "module",
   "main": "src/electron/main.cjs",

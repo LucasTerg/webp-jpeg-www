@@ -358,13 +358,22 @@ async function executeLogic() {
       
       // Debugowanie ścieżek
       // W Electronie obiekt File ma właściwość .path (pełna ścieżka)
+      // Używamy helpera getPathForFile (jeśli dostępny) dla lepszej kompatybilności z Flatpak/Sandbox
       let filePaths = selectedFiles.map(item => {
-          if (!item.file.path) {
+          let path = null;
+          if (window.electronAPI.getPathForFile) {
+              path = window.electronAPI.getPathForFile(item.file);
+          }
+          
+          if (!path) {
+             path = item.file.path;
+          }
+
+          if (!path) {
               log(`OSTRZEŻENIE: Brak ścieżki dla pliku: ${item.file.name}. Sprawdź uprawnienia lub metodę dodawania.`);
-              // Próba fallbacku dla niektórych wersji Electrona (czasem path jest w innym miejscu)
               return null; 
           }
-          return item.file.path;
+          return path;
       }).filter(path => path !== null);
 
       if (filePaths.length === 0) {
