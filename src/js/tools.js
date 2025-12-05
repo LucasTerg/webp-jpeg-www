@@ -27,6 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
     optResize = document.getElementById('opt-resize');
     // optBgRemove = document.getElementById('opt-bg-remove');
 
+    // --- DETEKCJA ELECTRONA (Desktop) ---
+    if (window.electronAPI) {
+        document.body.classList.add('is-electron');
+        log('Tryb Desktop (Electron) aktywny.');
+        
+        // Ustawienia domyślne dla desktopu
+        if (optTrimOnly) optTrimOnly.checked = true; // Prio domyślnie włączone
+        if (optCrop) optCrop.checked = false;        // Zwykłe kadrowanie wyłączone
+    }
+
     // --- THEME SWITCH INIT ---
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -318,6 +328,41 @@ async function executeLogic() {
   const mode = processingModeSelect.value;
 
   log(`Rozpoczynanie procedury dla ${selectedFiles.length} plików (${mode === 'local' ? 'LOKALNIE' : 'SERWER'})...`);
+
+  // --- TRYB ELECTRON (Desktop) ---
+  if (window.electronAPI) {
+      log('Wykryto środowisko Desktop (Electron). Używam natywnego przetwarzania...');
+      
+      // W Electronie obiekt File ma właściwość .path (pełna ścieżka)
+      const filePaths = selectedFiles.map(item => item.file.path);
+      
+      const options = { 
+          baseName, 
+          startNumber: startNum, 
+          optCrop: optCrop.checked, 
+          optTrimOnly: optTrimOnly.checked,
+          optAddMargin: optAddMargin.checked,
+          optResize: optResize.checked 
+      };
+
+      // Rejestracja listenera logów (jeśli jeszcze nie dodany)
+      if (!window.electronLogListenerAdded) {
+          window.electronAPI.onLog((msg) => log(msg));
+          window.electronLogListenerAdded = true;
+      }
+
+      try {
+          const result = await window.electronAPI.processImages(filePaths, options);
+          if (result.success) {
+              log(`SUKCES: Zapisano w katalogu: ${result.path}`);
+          } else {
+              log(`BŁĄD: ${result.message}`);
+          }
+      } catch (e) {
+          log(`BŁĄD KRYTYCZNY: ${e.message}`);
+      }
+      return;
+  }
 
   if (mode === 'local') {
     const options = { 

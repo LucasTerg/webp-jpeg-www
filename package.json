@@ -1,23 +1,74 @@
 {
-  "name": "webp-jpeg-www",
-  "private": true,
+  "name": "photo-cropper-tool",
+  "productName": "Photo Cropper Tool",
   "version": "1.0.0",
+  "description": "Narzędzie do masowego kadrowania i optymalizacji zdjęć (WebP/JPEG/MozJPEG)",
+  "private": true,
   "type": "module",
+  "main": "src/electron/main.cjs",
+  "author": "Łukasz Kalinowski <lukasz.kalinowski.terg@gmail.com>",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "dev": "concurrently \"vite\" \"node src/js/server.js\"",
-    "build": "vite build --base=/webp-jpeg-www/",
-    "preview": "vite preview"
+    "build": "vite build --base=./",
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "electron:build": "vite build --base=./ && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.terg.photocropper",
+    "productName": "Photo Cropper",
+    "copyright": "Copyright © 2025 TERG S.A.",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/electron/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.svg"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/favicon.svg"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/favicon.svg",
+      "category": "Graphics"
+    }
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.5",
+    "electron-builder": "^26.0.12",
+    "electron-is-dev": "^3.0.1",
+    "electron-reloader": "^1.2.3",
     "glob": "^11.0.0",
     "postcss": "^8.4.49",
     "postcss-sort-media-queries": "^5.2.0",
-    "vite": "^5.4.6"
+    "vite": "^5.4.6",
+    "wait-on": "^7.2.0"
   },
-  "author": "Łukasz Kalinowski <lukasz.kalinowski.terg@gmail.com>",
-  "license": "LGPL-3.0-or-later",
   "dependencies": {
+    "@emnapi/runtime": "^1.3.1",
     "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "express": "^4.21.1",

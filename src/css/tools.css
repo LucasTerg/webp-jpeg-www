@@ -33,6 +33,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 20px;
+  padding-bottom: 60px; /* Miejsce na stopkę */
 }
 
 header {
@@ -233,4 +234,60 @@ input[type="checkbox"] {
 
 .status-log p {
   margin: 2px 0;
+}
+
+/* --- HACKER FOOTER --- */
+.hacker-footer {
+    grid-column: 1 / -1;
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.footer-content {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.footer-icon {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    text-decoration: none;
+    transition: transform 0.2s, color 0.2s;
+    display: inline-block;
+}
+
+.footer-icon:hover {
+    color: var(--accent-color);
+    transform: scale(1.3); /* Efekt powiększania */
+    text-shadow: 0 0 8px var(--accent-color);
+}
+
+.footer-text {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    border-left: 1px solid var(--border-color);
+    padding-left: 20px;
+    margin-left: 10px;
+}
+
+/* Klasy pomocnicze do ukrywania elementów w zależności od trybu */
+.web-only {
+    /* Domyślnie widoczne, ukrywane przez JS w Electronie */
+}
+.electron-only {
+    display: none; /* Domyślnie ukryte */
+}
+
+/* Jeśli klasa .is-electron zostanie dodana do body, odwracamy widoczność */
+body.is-electron .web-only {
+    display: none !important;
+}
+body.is-electron .electron-only {
+    display: block !important;
 }

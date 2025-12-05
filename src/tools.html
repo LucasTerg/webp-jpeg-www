@@ -6,13 +6,16 @@
     <title>TERG Tools // Hacker Edition</title>
     <link rel="stylesheet" href="./css/reset.css" />
     <link rel="stylesheet" href="./css/tools.css" />
+    <!-- FontAwesome dla ikonek -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   </head>
   <body>
     <div class="hacker-container">
       <header>
         <h1><span>SYSTEM</span> NARZĘDZIOWY PIM</h1>
         <div>
-          <a href="index.html" class="btn btn-sm">Wróć</a>
+          <!-- Przycisk "Wróć" tylko w wersji WEB -->
+          <a href="index.html" class="btn btn-sm web-only">Wróć</a>
           <button id="theme-toggle" class="btn btn-sm">L/D MODE</button>
         </div>
       </header>
@@ -51,11 +54,11 @@
 
         <div class="control-group">
           <label class="checkbox-label">
-            <input type="checkbox" id="opt-crop" checked />
+            <input type="checkbox" id="opt-crop" />
             [KADROWANIE + MARGINES 5PX]
           </label>
           <label class="checkbox-label">
-            <input type="checkbox" id="opt-trim-only" />
+            <input type="checkbox" id="opt-trim-only" checked />
             [SAMO KADROWANIE Prio]
           </label>
           <label class="checkbox-label">
@@ -68,7 +71,8 @@
           </label>
         </div>
 
-        <div class="control-group">
+        <!-- Ukryte w Electronie (automatycznie native) -->
+        <div class="control-group web-only" id="mode-selector-group">
           <label for="processing-mode">TRYB PRZETWARZANIA:</label>
           <select id="processing-mode" style="width: 100%; background: var(--bg-color); color: var(--accent-color); border: 1px solid var(--border-color); padding: 8px;">
             <option value="local">LOKALNY (Przeglądarka - GitHub Pages)</option>
@@ -83,11 +87,24 @@
       <div class="status-log" id="console-log">
         <p>> System gotowy...</p>
       </div>
+
+      <!-- Hakerska Stopka -->
+      <footer class="hacker-footer">
+          <div class="footer-content">
+              <a href="https://github.com/LucasTerg/webp-jpeg-www" target="_blank" class="footer-icon" title="GitHub Repo">
+                  <i class="fab fa-github"></i>
+              </a>
+              <a href="mailto:dev@lmk.one" class="footer-icon" title="Contact Dev">
+                  <i class="fas fa-envelope"></i>
+              </a>
+              <span class="footer-text">POWERED BY ELECTRON & SHARP</span>
+          </div>
+      </footer>
+
     </div>
 
     <div id="preview-tooltip" class="preview-tooltip"></div>
-
-    <load src="./partials/nav-fab.html" />
+    
     <script type="module" src="./js/tools.js"></script>
   </body>
 </html>
